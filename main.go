@@ -70,7 +70,7 @@ func (g *emojiGrid) CreateRenderer() fyne.WidgetRenderer {
 	return &emojiGridRenderer{grid: g}
 }
 
-// Make widget focusable
+// Focusable Make widget focusable
 func (g *emojiGrid) Focusable() bool {
 	return true
 }
@@ -91,7 +91,7 @@ func (g *emojiGrid) FocusLost() {
 	g.Refresh()
 }
 
-func (g *emojiGrid) TypedRune(r rune) {
+func (g *emojiGrid) TypedRune(_ rune) {
 	// Ignore typed runes
 }
 
@@ -199,7 +199,7 @@ func (g *emojiGrid) scrollToSelected() {
 	g.scroll.Refresh()
 }
 
-// Handle mouse/touch
+// Tapped Handle mouse/touch
 func (g *emojiGrid) Tapped(ev *fyne.PointEvent) {
 	col := int(ev.Position.X / g.cellSize)
 	row := int(ev.Position.Y / g.cellSize)
@@ -213,10 +213,10 @@ func (g *emojiGrid) Tapped(ev *fyne.PointEvent) {
 	}
 }
 
-// Implement desktop.Hoverable for hover support
-func (g *emojiGrid) MouseIn(ev *desktop.MouseEvent)    {}
-func (g *emojiGrid) MouseOut()                         {}
-func (g *emojiGrid) MouseMoved(ev *desktop.MouseEvent) {}
+// MouseIn Implement desktop.Hoverable for hover support
+func (g *emojiGrid) MouseIn(_ *desktop.MouseEvent)    {}
+func (g *emojiGrid) MouseOut()                        {}
+func (g *emojiGrid) MouseMoved(_ *desktop.MouseEvent) {}
 
 type emojiGridRenderer struct {
 	grid   *emojiGrid
@@ -224,7 +224,7 @@ type emojiGridRenderer struct {
 	bg     *canvas.Rectangle
 }
 
-func (r *emojiGridRenderer) Layout(size fyne.Size) {
+func (r *emojiGridRenderer) Layout(_ fyne.Size) {
 	// Layout is handled in Refresh
 }
 
@@ -269,40 +269,21 @@ func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 		x := float32(col) * r.grid.cellSize
 		y := float32(row) * r.grid.cellSize
 
-		highlightColor := color.NRGBA{R: 100, G: 100, B: 100, A: 255}
+		highlightColor := color.NRGBA{R: 255, G: 255, B: 255, A: 100}
 		cornerRadius := float32(6) // Moderate rounding
 
 		// Main rectangles
-		mainRect := canvas.NewRectangle(highlightColor)
-		mainRect.Move(fyne.NewPos(x+cornerRadius, y))
-		mainRect.Resize(fyne.NewSize(r.grid.cellSize-2*cornerRadius, r.grid.cellSize))
+		mainRect := &canvas.Rectangle{
+			FillColor:               highlightColor,
+			Aspect:                  1,
+			TopRightCornerRadius:    cornerRadius,
+			TopLeftCornerRadius:     cornerRadius,
+			BottomRightCornerRadius: cornerRadius,
+			BottomLeftCornerRadius:  cornerRadius,
+		}
+		mainRect.Move(fyne.NewPos(x, y))
+		mainRect.Resize(fyne.NewSize(r.grid.cellSize, r.grid.cellSize))
 		objects = append(objects, mainRect)
-
-		vertRect := canvas.NewRectangle(highlightColor)
-		vertRect.Move(fyne.NewPos(x, y+cornerRadius))
-		vertRect.Resize(fyne.NewSize(r.grid.cellSize, r.grid.cellSize-2*cornerRadius))
-		objects = append(objects, vertRect)
-
-		// Corner circles for rounded effect
-		topLeft := canvas.NewCircle(highlightColor)
-		topLeft.Move(fyne.NewPos(x, y))
-		topLeft.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
-		objects = append(objects, topLeft)
-
-		topRight := canvas.NewCircle(highlightColor)
-		topRight.Move(fyne.NewPos(x+r.grid.cellSize-cornerRadius*2, y))
-		topRight.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
-		objects = append(objects, topRight)
-
-		bottomLeft := canvas.NewCircle(highlightColor)
-		bottomLeft.Move(fyne.NewPos(x, y+r.grid.cellSize-cornerRadius*2))
-		bottomLeft.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
-		objects = append(objects, bottomLeft)
-
-		bottomRight := canvas.NewCircle(highlightColor)
-		bottomRight.Move(fyne.NewPos(x+r.grid.cellSize-cornerRadius*2, y+r.grid.cellSize-cornerRadius*2))
-		bottomRight.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
-		objects = append(objects, bottomRight)
 	}
 
 	for _, label := range r.labels {
@@ -347,7 +328,7 @@ type grayTheme struct{}
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 0x62, G: 0x8b, B: 0x97, A: 255} // #628b97 - modern teal-gray
+		return color.NRGBA{R: 0x33, G: 0x66, B: 0x66, A: 255} // #336666
 	case theme.ColorNameButton:
 		return color.NRGBA{R: 0x72, G: 0x9b, B: 0xa7, A: 255} // Slightly lighter
 	case theme.ColorNameDisabledButton:
