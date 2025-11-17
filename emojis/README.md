@@ -1,28 +1,27 @@
-# OpenMoji Emoji Assets
+# Noto Color Emoji Assets
 
-This directory contains PNG emoji files from the OpenMoji project.
+This directory contains PNG emoji files from the Noto Color Emoji project.
 
 ## Download
 
-To download the OpenMoji emoji PNG files, run:
+To download the Noto Color Emoji PNG files, run:
 
 ```bash
-./download_openmoji.sh
+./download_emoji.sh
 ```
 
-This will download ~4000 OpenMoji color PNG files (72x72) to this directory.
+This will download Noto Color Emoji PNG files (136x128) to this directory.
 
 ## License
 
-OpenMoji graphics are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+Noto Color Emoji graphics are licensed under Apache License 2.0
 
-- Project: https://openmoji.org/
-- GitHub: https://github.com/hfg-gmuend/openmoji
+- Project: https://github.com/googlefonts/noto-emoji
 
 ## File Format
 
-Files are named using Unicode codepoint format, e.g.:
-- `1F600.png` → 😀 (U+1F600)
-- `1F468-1F3FB.png` → 👨🏻 (U+1F468 U+1F3FB)
+Files are named using Unicode codepoint format with "emoji_u" prefix, e.g.:
+- `emoji_u1f600.png` → 😀 (U+1F600)
+- `emoji_u1f468_1f3fb.png` → 👨🏻 (U+1F468 U+1F3FB)
 
-Multiple codepoints are separated by hyphens.
+Multiple codepoints are separated by underscores.

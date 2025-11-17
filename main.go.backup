@@ -444,21 +444,17 @@ func getEmojiCategory(emojiStr string) int {
 	return 10
 }
 
-// unicodeToFilename converts a Unicode emoji string to Noto Emoji filename format
-// e.g. "😀" -> "emoji_u1f600.png", "👨🏻" -> "emoji_u1f468_1f3fb.png"
+// unicodeToFilename converts a Unicode emoji string to OpenMoji filename format
+// e.g. "😀" -> "1F600.png", "👨‍👩‍👧‍👦" -> "1F468-200D-1F469-200D-1F467-200D-1F466.png"
 func unicodeToFilename(emojiStr string) string {
 	runes := []rune(emojiStr)
 	var hexParts []string
 
 	for _, r := range runes {
-		// Skip variation selectors
-		if r == 0xFE0E || r == 0xFE0F {
-			continue
-		}
-		hexParts = append(hexParts, fmt.Sprintf("%x", r))
+		hexParts = append(hexParts, fmt.Sprintf("%04X", r))
 	}
 
-	return "emoji_u" + strings.Join(hexParts, "_") + ".png"
+	return strings.Join(hexParts, "-") + ".png"
 }
 
 // loadEmojiImage loads an emoji image from embedded assets
@@ -466,7 +462,18 @@ func loadEmojiImage(filename string) *canvas.Image {
 	path := "emojis/" + filename
 	data, err := emojiAssets.ReadFile(path)
 	if err != nil {
-		return nil
+		// File not found, try with simpler name (some emojis have variant selectors)
+		// Try removing FE0F (variation selector-16) if present
+		if strings.Contains(filename, "-FE0F") {
+			simpler := strings.ReplaceAll(filename, "-FE0F", "")
+			path = "emojis/" + simpler
+			data, err = emojiAssets.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
 	}
 
 	img, _, err := image.Decode(bytes.NewReader(data))
