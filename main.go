@@ -3,6 +3,7 @@ package main
 import (
 	"image/color"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -24,21 +25,24 @@ type EmojiData struct {
 // emojiGrid is a custom widget that displays emojis in a grid with keyboard navigation
 type emojiGrid struct {
 	widget.BaseWidget
-	emojis        []EmojiData
-	onSelected    func(string)
-	onEscape      func()
-	selectedIndex int
-	columns       int
-	cellSize      float32
+	emojis           []EmojiData
+	onSelected       func(string)
+	onEscape         func()
+	onReturnToSearch func()
+	selectedIndex    int
+	columns          int
+	cellSize         float32
+	scroll           *container.Scroll
 }
 
-func newEmojiGrid(columns int, onSelected func(string), onEscape func()) *emojiGrid {
+func newEmojiGrid(columns int, onSelected func(string), onEscape func(), onReturnToSearch func()) *emojiGrid {
 	g := &emojiGrid{
-		columns:       columns,
-		cellSize:      35,
-		selectedIndex: -1,
-		onSelected:    onSelected,
-		onEscape:      onEscape,
+		columns:          columns,
+		cellSize:         40, // Increased from 35 to 40 for more spacing
+		selectedIndex:    -1,
+		onSelected:       onSelected,
+		onEscape:         onEscape,
+		onReturnToSearch: onReturnToSearch,
 	}
 	g.ExtendBaseWidget(g)
 	return g
@@ -102,6 +106,8 @@ func (g *emojiGrid) TypedKey(key *fyne.KeyEvent) {
 		g.selectedIndex = 0
 	}
 
+	oldIndex := g.selectedIndex
+
 	switch key.Name {
 	case fyne.KeyDown:
 		if g.selectedIndex+g.columns < len(g.emojis) {
@@ -110,6 +116,10 @@ func (g *emojiGrid) TypedKey(key *fyne.KeyEvent) {
 	case fyne.KeyUp:
 		if g.selectedIndex >= g.columns {
 			g.selectedIndex -= g.columns
+		} else if g.onReturnToSearch != nil {
+			// If in first row, return to search
+			g.onReturnToSearch()
+			return
 		}
 	case fyne.KeyLeft:
 		if g.selectedIndex > 0 {
@@ -127,7 +137,55 @@ func (g *emojiGrid) TypedKey(key *fyne.KeyEvent) {
 		}
 		return
 	}
+
+	// Scroll to selected emoji if selection changed
+	if oldIndex != g.selectedIndex && g.scroll != nil {
+		g.scrollToSelected()
+	}
+
 	g.Refresh()
+}
+
+// scrollToSelected ensures the selected emoji is visible in the scroll container
+func (g *emojiGrid) scrollToSelected() {
+	if g.scroll == nil || g.selectedIndex < 0 || g.selectedIndex >= len(g.emojis) {
+		return
+	}
+
+	row := g.selectedIndex / g.columns
+	y := float32(row) * g.cellSize
+
+	// Get scroll container size
+	scrollSize := g.scroll.Size()
+	contentHeight := g.MinSize().Height
+
+	// Calculate visible range
+	currentOffset := g.scroll.Offset.Y
+	visibleTop := currentOffset
+	visibleBottom := currentOffset + scrollSize.Height
+
+	// Check if selected emoji is outside visible area
+	emojiTop := y
+	emojiBottom := y + g.cellSize
+
+	if emojiTop < visibleTop {
+		// Scroll up to show emoji
+		g.scroll.Offset.Y = emojiTop
+	} else if emojiBottom > visibleBottom {
+		// Scroll down to show emoji
+		g.scroll.Offset.Y = emojiBottom - scrollSize.Height
+	}
+
+	// Clamp offset
+	if g.scroll.Offset.Y < 0 {
+		g.scroll.Offset.Y = 0
+	}
+	maxOffset := contentHeight - scrollSize.Height
+	if maxOffset > 0 && g.scroll.Offset.Y > maxOffset {
+		g.scroll.Offset.Y = maxOffset
+	}
+
+	g.scroll.Refresh()
 }
 
 // Handle mouse/touch
@@ -169,7 +227,7 @@ func (r *emojiGridRenderer) Refresh() {
 
 	for i, e := range r.grid.emojis {
 		text := canvas.NewText(e.Emoji, color.White)
-		text.TextSize = 24
+		text.TextSize = 20 // Reduced from 24 to 20 for smaller emojis
 
 		col := i % r.grid.columns
 		row := i / r.grid.columns
@@ -177,7 +235,8 @@ func (r *emojiGridRenderer) Refresh() {
 		x := float32(col) * r.grid.cellSize
 		y := float32(row) * r.grid.cellSize
 
-		text.Move(fyne.NewPos(x+5, y+5))
+		// Center emoji in cell with more spacing
+		text.Move(fyne.NewPos(x+10, y+10))
 		r.labels[i] = text
 	}
 
@@ -199,7 +258,7 @@ func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 		x := float32(col) * r.grid.cellSize
 		y := float32(row) * r.grid.cellSize
 
-		highlight := canvas.NewRectangle(color.NRGBA{R: 80, G: 80, B: 80, A: 255})
+		highlight := canvas.NewRectangle(color.NRGBA{R: 100, G: 100, B: 100, A: 255}) // Lighter highlight (was 80,80,80)
 		highlight.Move(fyne.NewPos(x, y))
 		highlight.Resize(fyne.NewSize(r.grid.cellSize, r.grid.cellSize))
 		objects = append(objects, highlight)
@@ -214,10 +273,11 @@ func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 
 func (r *emojiGridRenderer) Destroy() {}
 
-// customEntry - entry that allows ESC to propagate
+// customEntry - entry that allows ESC to propagate and down arrow to move to grid
 type customEntry struct {
 	widget.Entry
-	onEscape func()
+	onEscape     func()
+	onMoveToGrid func()
 }
 
 func newCustomEntry() *customEntry {
@@ -232,6 +292,11 @@ func (e *customEntry) TypedKey(key *fyne.KeyEvent) {
 		e.onEscape()
 		return
 	}
+	// Allow Down arrow to move to grid
+	if key.Name == fyne.KeyDown && e.onMoveToGrid != nil {
+		e.onMoveToGrid()
+		return
+	}
 	e.Entry.TypedKey(key)
 }
 
@@ -241,25 +306,25 @@ type grayTheme struct{}
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 40, G: 40, B: 40, A: 255}
+		return color.NRGBA{R: 60, G: 60, B: 60, A: 255} // Lighter background (was 40,40,40)
 	case theme.ColorNameButton:
-		return color.NRGBA{R: 60, G: 60, B: 60, A: 255}
+		return color.NRGBA{R: 80, G: 80, B: 80, A: 255} // Lighter buttons (was 60,60,60)
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 50, G: 50, B: 50, A: 255}
+		return color.NRGBA{R: 70, G: 70, B: 70, A: 255} // Lighter (was 50,50,50)
 	case theme.ColorNameInputBackground:
-		return color.NRGBA{R: 50, G: 50, B: 50, A: 255}
+		return color.NRGBA{R: 70, G: 70, B: 70, A: 255} // Lighter (was 50,50,50)
 	case theme.ColorNameForeground:
 		return color.NRGBA{R: 220, G: 220, B: 220, A: 255}
 	case theme.ColorNameHover:
-		return color.NRGBA{R: 70, G: 70, B: 70, A: 255}
+		return color.NRGBA{R: 90, G: 90, B: 90, A: 255} // Lighter (was 70,70,70)
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 120, G: 120, B: 120, A: 255}
+		return color.NRGBA{R: 140, G: 140, B: 140, A: 255} // Lighter (was 120,120,120)
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 80, G: 80, B: 80, A: 255}
+		return color.NRGBA{R: 100, G: 100, B: 100, A: 255} // Lighter (was 80,80,80)
 	case theme.ColorNamePrimary:
-		return color.NRGBA{R: 90, G: 90, B: 90, A: 255}
+		return color.NRGBA{R: 110, G: 110, B: 110, A: 255} // Lighter (was 90,90,90)
 	case theme.ColorNameScrollBar:
-		return color.NRGBA{R: 60, G: 60, B: 60, A: 255}
+		return color.NRGBA{R: 80, G: 80, B: 80, A: 255} // Lighter (was 60,60,60)
 	case theme.ColorNameShadow:
 		return color.NRGBA{R: 0, G: 0, B: 0, A: 100}
 	default:
@@ -279,7 +344,7 @@ func (grayTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
 
-// getAllEmojis returns all available emojis from the library
+// getAllEmojis returns all available emojis from the library, sorted by key
 func getAllEmojis() []EmojiData {
 	var result []EmojiData
 	for key, emojiStr := range emoji.Map() {
@@ -288,6 +353,10 @@ func getAllEmojis() []EmojiData {
 			Key:   key,
 		})
 	}
+	// Sort emojis by their key name for consistent ordering
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Key < result[j].Key
+	})
 	return result
 }
 
@@ -378,16 +447,30 @@ func main() {
 		myApp.Quit()
 	}
 
-	// Create custom entry that handles ESC
+	// Create custom entry that handles ESC and down arrow
 	searchEntry := newCustomEntry()
 	searchEntry.SetPlaceHolder("Search emoji...")
 	searchEntry.onEscape = onEscape
 
-	// Create emoji grid
-	grid := newEmojiGrid(5, onEmojiSelected, onEscape)
+	// Create emoji grid (will set onReturnToSearch and scroll later)
+	grid := newEmojiGrid(5, onEmojiSelected, onEscape, nil)
 
 	// Wrap grid in scroll container
 	scroll := container.NewVScroll(grid)
+	grid.scroll = scroll // Set scroll reference for auto-scrolling
+
+	// Set up bidirectional navigation
+	searchEntry.onMoveToGrid = func() {
+		if len(grid.emojis) > 0 {
+			grid.selectedIndex = 0
+			myWindow.Canvas().Focus(grid)
+			grid.Refresh()
+		}
+	}
+
+	grid.onReturnToSearch = func() {
+		myWindow.Canvas().Focus(searchEntry)
+	}
 
 	// Update function
 	updateEmojis := func(query string) {
