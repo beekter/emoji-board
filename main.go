@@ -67,6 +67,20 @@ func (g *emojiGrid) Focusable() bool {
 	return true
 }
 
+func (g *emojiGrid) FocusGained() {
+	// Initialize selection when gaining focus
+	if g.selectedIndex == -1 && len(g.emojis) > 0 {
+		g.selectedIndex = 0
+	}
+	g.Refresh()
+}
+
+func (g *emojiGrid) FocusLost() {
+	// Optionally clear selection when losing focus
+	// Keeping selection visible for now
+	g.Refresh()
+}
+
 func (g *emojiGrid) TypedRune(r rune) {
 	// Ignore typed runes
 }
