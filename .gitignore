@@ -5,3 +5,6 @@ pkg/
 *.pkg.tar.*
 *.tar.gz
 
+# OpenMoji PNG assets (embedded in binary)
+emojis/
+

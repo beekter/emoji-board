@@ -1,6 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"embed"
+	"fmt"
+	"image"
 	"image/color"
 	_ "image/png" // Register PNG format
 	"os"
@@ -19,10 +23,14 @@ import (
 	"github.com/enescakir/emoji"
 )
 
+//go:embed emojis/*.png
+var emojiAssets embed.FS
+
 // EmojiData represents an emoji with its key name
 type EmojiData struct {
-	Emoji string
-	Key   string
+	Emoji    string
+	Key      string
+	Filename string
 }
 
 // emojiGrid is a custom widget that displays emojis in a grid with keyboard navigation
@@ -220,7 +228,7 @@ func (g *emojiGrid) MouseMoved(_ *desktop.MouseEvent) {}
 
 type emojiGridRenderer struct {
 	grid   *emojiGrid
-	labels []*canvas.Text
+	images []*canvas.Image
 	bg     *canvas.Rectangle
 }
 
@@ -233,12 +241,19 @@ func (r *emojiGridRenderer) MinSize() fyne.Size {
 }
 
 func (r *emojiGridRenderer) Refresh() {
-	// Recreate labels for emojis
-	r.labels = make([]*canvas.Text, len(r.grid.emojis))
+	// Recreate images for emojis
+	r.images = make([]*canvas.Image, len(r.grid.emojis))
 
 	for i, e := range r.grid.emojis {
-		text := canvas.NewText(e.Emoji, color.White)
-		text.TextSize = 21 // Reduced from 24 to 21 for smaller emojis
+		// Load emoji image from embedded assets
+		img := loadEmojiImage(e.Filename)
+		if img == nil {
+			// Fallback to empty image if loading fails
+			img = canvas.NewImageFromImage(image.NewRGBA(image.Rect(0, 0, 1, 1)))
+		}
+
+		img.FillMode = canvas.ImageFillContain
+		img.SetMinSize(fyne.NewSize(28, 28)) // Emoji display size
 
 		col := i % r.grid.columns
 		row := i / r.grid.columns
@@ -246,9 +261,10 @@ func (r *emojiGridRenderer) Refresh() {
 		x := float32(col) * r.grid.cellSize
 		y := float32(row) * r.grid.cellSize
 
-		// Center emoji in cell with more spacing
-		text.Move(fyne.NewPos(x+10, y+10))
-		r.labels[i] = text
+		// Center emoji in cell
+		img.Move(fyne.NewPos(x+6, y+6))
+		img.Resize(fyne.NewSize(28, 28))
+		r.images[i] = img
 	}
 
 	canvas.Refresh(r.grid)
@@ -259,7 +275,7 @@ func (r *emojiGridRenderer) BackgroundColor() color.Color {
 }
 
 func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
-	objects := make([]fyne.CanvasObject, 0, len(r.labels)+10)
+	objects := make([]fyne.CanvasObject, 0, len(r.images)+10)
 
 	// Add selection highlight with rounded corners only if grid has focus
 	if r.grid.hasFocus && r.grid.selectedIndex >= 0 && r.grid.selectedIndex < len(r.grid.emojis) {
@@ -286,8 +302,8 @@ func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 		objects = append(objects, mainRect)
 	}
 
-	for _, label := range r.labels {
-		objects = append(objects, label)
+	for _, img := range r.images {
+		objects = append(objects, img)
 	}
 
 	return objects
@@ -428,13 +444,54 @@ func getEmojiCategory(emojiStr string) int {
 	return 10
 }
 
+// unicodeToFilename converts a Unicode emoji string to OpenMoji filename format
+// e.g. "😀" -> "1F600.png", "👨‍👩‍👧‍👦" -> "1F468-200D-1F469-200D-1F467-200D-1F466.png"
+func unicodeToFilename(emojiStr string) string {
+	runes := []rune(emojiStr)
+	var hexParts []string
+
+	for _, r := range runes {
+		hexParts = append(hexParts, fmt.Sprintf("%04X", r))
+	}
+
+	return strings.Join(hexParts, "-") + ".png"
+}
+
+// loadEmojiImage loads an emoji image from embedded assets
+func loadEmojiImage(filename string) *canvas.Image {
+	path := "emojis/" + filename
+	data, err := emojiAssets.ReadFile(path)
+	if err != nil {
+		// File not found, try with simpler name (some emojis have variant selectors)
+		// Try removing FE0F (variation selector-16) if present
+		if strings.Contains(filename, "-FE0F") {
+			simpler := strings.ReplaceAll(filename, "-FE0F", "")
+			path = "emojis/" + simpler
+			data, err = emojiAssets.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil
+	}
+
+	return canvas.NewImageFromImage(img)
+}
+
 // getAllEmojis returns all available emojis sorted by category (faces first, then others)
 func getAllEmojis() []EmojiData {
 	var result []EmojiData
 	for key, emojiStr := range emoji.Map() {
 		result = append(result, EmojiData{
-			Emoji: emojiStr,
-			Key:   key,
+			Emoji:    emojiStr,
+			Key:      key,
+			Filename: unicodeToFilename(emojiStr),
 		})
 	}
 

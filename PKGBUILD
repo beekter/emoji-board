@@ -1,11 +1,11 @@
 pkgname=emoji-board
 pkgver=1.0
 pkgrel=1
-pkgdesc="Fyne emoji picker for Wayland/X11"
+pkgdesc="Fyne emoji picker for Wayland/X11 with OpenMoji graphics"
 arch=('x86_64')
 url="https://github.com/beekter/emoji-board"
-license=('BSD-3-Clause')
-depends=('xdotool' 'wl-clipboard' 'noto-fonts-emoji')
+license=('BSD-3-Clause' 'CC-BY-SA-4.0')
+depends=('xdotool' 'wl-clipboard')
 makedepends=('go')
 
 build() {
