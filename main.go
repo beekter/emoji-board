@@ -3,7 +3,6 @@ package main
 import (
 	"image/color"
 	"os/exec"
-	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -91,6 +90,11 @@ func (g *emojiGrid) TypedRune(r rune) {
 
 func (g *emojiGrid) TypedKey(key *fyne.KeyEvent) {
 	if key.Name == fyne.KeyEscape {
+		// First ESC returns to search, second ESC quits
+		if g.onReturnToSearch != nil {
+			g.onReturnToSearch()
+			return
+		}
 		if g.onEscape != nil {
 			g.onEscape()
 		}
@@ -248,9 +252,9 @@ func (r *emojiGridRenderer) BackgroundColor() color.Color {
 }
 
 func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
-	objects := make([]fyne.CanvasObject, 0, len(r.labels)+1)
+	objects := make([]fyne.CanvasObject, 0, len(r.labels)+10)
 
-	// Add selection highlight if something is selected
+	// Add selection highlight with rounded corners if something is selected
 	if r.grid.selectedIndex >= 0 && r.grid.selectedIndex < len(r.grid.emojis) {
 		col := r.grid.selectedIndex % r.grid.columns
 		row := r.grid.selectedIndex / r.grid.columns
@@ -258,10 +262,40 @@ func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 		x := float32(col) * r.grid.cellSize
 		y := float32(row) * r.grid.cellSize
 
-		highlight := canvas.NewRectangle(color.NRGBA{R: 100, G: 100, B: 100, A: 255}) // Lighter highlight (was 80,80,80)
-		highlight.Move(fyne.NewPos(x, y))
-		highlight.Resize(fyne.NewSize(r.grid.cellSize, r.grid.cellSize))
-		objects = append(objects, highlight)
+		highlightColor := color.NRGBA{R: 100, G: 100, B: 100, A: 255}
+		cornerRadius := float32(6) // Moderate rounding
+
+		// Main rectangles
+		mainRect := canvas.NewRectangle(highlightColor)
+		mainRect.Move(fyne.NewPos(x+cornerRadius, y))
+		mainRect.Resize(fyne.NewSize(r.grid.cellSize-2*cornerRadius, r.grid.cellSize))
+		objects = append(objects, mainRect)
+
+		vertRect := canvas.NewRectangle(highlightColor)
+		vertRect.Move(fyne.NewPos(x, y+cornerRadius))
+		vertRect.Resize(fyne.NewSize(r.grid.cellSize, r.grid.cellSize-2*cornerRadius))
+		objects = append(objects, vertRect)
+
+		// Corner circles for rounded effect
+		topLeft := canvas.NewCircle(highlightColor)
+		topLeft.Move(fyne.NewPos(x, y))
+		topLeft.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
+		objects = append(objects, topLeft)
+
+		topRight := canvas.NewCircle(highlightColor)
+		topRight.Move(fyne.NewPos(x+r.grid.cellSize-cornerRadius*2, y))
+		topRight.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
+		objects = append(objects, topRight)
+
+		bottomLeft := canvas.NewCircle(highlightColor)
+		bottomLeft.Move(fyne.NewPos(x, y+r.grid.cellSize-cornerRadius*2))
+		bottomLeft.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
+		objects = append(objects, bottomLeft)
+
+		bottomRight := canvas.NewCircle(highlightColor)
+		bottomRight.Move(fyne.NewPos(x+r.grid.cellSize-cornerRadius*2, y+r.grid.cellSize-cornerRadius*2))
+		bottomRight.Resize(fyne.NewSize(cornerRadius*2, cornerRadius*2))
+		objects = append(objects, bottomRight)
 	}
 
 	for _, label := range r.labels {
@@ -344,7 +378,7 @@ func (grayTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
 
-// getAllEmojis returns all available emojis from the library, sorted by key
+// getAllEmojis returns all available emojis from the library in natural order
 func getAllEmojis() []EmojiData {
 	var result []EmojiData
 	for key, emojiStr := range emoji.Map() {
@@ -353,10 +387,8 @@ func getAllEmojis() []EmojiData {
 			Key:   key,
 		})
 	}
-	// Sort emojis by their key name for consistent ordering
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Key < result[j].Key
-	})
+	// Keep emojis in their natural order (Unicode/insertion order)
+	// No sorting for "classical" order
 	return result
 }
 
