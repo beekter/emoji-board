@@ -36,6 +36,7 @@ type emojiGrid struct {
 	columns          int
 	cellSize         float32
 	scroll           *container.Scroll
+	hasFocus         bool
 }
 
 func newEmojiGrid(columns int, onSelected func(string), onEscape func(), onReturnToSearch func()) *emojiGrid {
@@ -79,12 +80,14 @@ func (g *emojiGrid) FocusGained() {
 	if g.selectedIndex == -1 && len(g.emojis) > 0 {
 		g.selectedIndex = 0
 	}
+	g.hasFocus = true
 	g.Refresh()
 }
 
 func (g *emojiGrid) FocusLost() {
-	// Optionally clear selection when losing focus
-	// Keeping selection visible for now
+	// Clear hasFocus flag when losing focus
+	// This hides the selection square
+	g.hasFocus = false
 	g.Refresh()
 }
 
@@ -258,8 +261,8 @@ func (r *emojiGridRenderer) BackgroundColor() color.Color {
 func (r *emojiGridRenderer) Objects() []fyne.CanvasObject {
 	objects := make([]fyne.CanvasObject, 0, len(r.labels)+10)
 
-	// Add selection highlight with rounded corners if something is selected
-	if r.grid.selectedIndex >= 0 && r.grid.selectedIndex < len(r.grid.emojis) {
+	// Add selection highlight with rounded corners only if grid has focus
+	if r.grid.hasFocus && r.grid.selectedIndex >= 0 && r.grid.selectedIndex < len(r.grid.emojis) {
 		col := r.grid.selectedIndex % r.grid.columns
 		row := r.grid.selectedIndex / r.grid.columns
 
@@ -344,25 +347,25 @@ type grayTheme struct{}
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 45, G: 52, B: 54, A: 255} // Modern dark slate color
+		return color.NRGBA{R: 0x62, G: 0x8b, B: 0x97, A: 255} // #628b97 - modern teal-gray
 	case theme.ColorNameButton:
-		return color.NRGBA{R: 65, G: 72, B: 74, A: 255} // Slightly lighter
+		return color.NRGBA{R: 0x72, G: 0x9b, B: 0xa7, A: 255} // Slightly lighter
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 55, G: 62, B: 64, A: 255}
+		return color.NRGBA{R: 0x6a, G: 0x93, B: 0x9f, A: 255}
 	case theme.ColorNameInputBackground:
-		return color.NRGBA{R: 55, G: 62, B: 64, A: 255}
+		return color.NRGBA{R: 0x7a, G: 0xa3, B: 0xaf, A: 255} // Lighter for focus visibility
 	case theme.ColorNameForeground:
 		return color.NRGBA{R: 220, G: 220, B: 220, A: 255}
 	case theme.ColorNameHover:
-		return color.NRGBA{R: 75, G: 82, B: 84, A: 255}
+		return color.NRGBA{R: 0x82, G: 0xab, B: 0xb7, A: 255}
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 140, G: 140, B: 140, A: 255}
+		return color.NRGBA{R: 140, G: 160, B: 170, A: 255}
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 85, G: 92, B: 94, A: 255}
+		return color.NRGBA{R: 0x8a, G: 0xb3, B: 0xbf, A: 255}
 	case theme.ColorNamePrimary:
-		return color.NRGBA{R: 95, G: 102, B: 104, A: 255}
+		return color.NRGBA{R: 0x92, G: 0xbb, B: 0xc7, A: 255}
 	case theme.ColorNameScrollBar:
-		return color.NRGBA{R: 75, G: 82, B: 84, A: 255}
+		return color.NRGBA{R: 0x82, G: 0xab, B: 0xb7, A: 255}
 	case theme.ColorNameShadow:
 		return color.NRGBA{R: 0, G: 0, B: 0, A: 100}
 	default:
@@ -454,7 +457,8 @@ func getAllEmojis() []EmojiData {
 		})
 	}
 
-	// Sort by category first, then by key name within category
+	// Sort by category first, then by Unicode code point within category
+	// This ensures smileys start with 😀 (grinning face) not alphabetically
 	sort.Slice(result, func(i, j int) bool {
 		catI := getEmojiCategory(result[i].Emoji)
 		catJ := getEmojiCategory(result[j].Emoji)
@@ -462,7 +466,17 @@ func getAllEmojis() []EmojiData {
 		if catI != catJ {
 			return catI < catJ
 		}
-		// Within same category, sort by key name
+
+		// Within same category, sort by first Unicode code point (natural emoji order)
+		// This makes smileys start with U+1F600 (grinning face) instead of alphabetical
+		runesI := []rune(result[i].Emoji)
+		runesJ := []rune(result[j].Emoji)
+
+		if len(runesI) > 0 && len(runesJ) > 0 {
+			return runesI[0] < runesJ[0]
+		}
+
+		// Fallback to key name
 		return result[i].Key < result[j].Key
 	})
 
@@ -597,6 +611,11 @@ func main() {
 	}
 
 	grid.onReturnToSearch = func() {
+		// Scroll to top when returning to search
+		if grid.scroll != nil {
+			grid.scroll.Offset.Y = 0
+			grid.scroll.Refresh()
+		}
 		myWindow.Canvas().Focus(searchEntry)
 	}
 
