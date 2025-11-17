@@ -37,6 +37,31 @@ func (b *fixedButton) MinSize() fyne.Size {
 	return fyne.NewSize(35, 35)
 }
 
+func (b *fixedButton) MaxSize() fyne.Size {
+	return fyne.NewSize(35, 35)
+}
+
+// customEntry - entry that allows ESC to propagate
+type customEntry struct {
+	widget.Entry
+	onEscape func()
+}
+
+func newCustomEntry() *customEntry {
+	entry := &customEntry{}
+	entry.ExtendBaseWidget(entry)
+	return entry
+}
+
+func (e *customEntry) TypedKey(key *fyne.KeyEvent) {
+	// Allow ESC to propagate by calling the callback
+	if key.Name == fyne.KeyEscape && e.onEscape != nil {
+		e.onEscape()
+		return
+	}
+	e.Entry.TypedKey(key)
+}
+
 // Custom dark gray theme
 type grayTheme struct{}
 
@@ -50,6 +75,20 @@ func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) colo
 		return color.NRGBA{R: 50, G: 50, B: 50, A: 255}
 	case theme.ColorNameInputBackground:
 		return color.NRGBA{R: 50, G: 50, B: 50, A: 255}
+	case theme.ColorNameForeground:
+		return color.NRGBA{R: 220, G: 220, B: 220, A: 255}
+	case theme.ColorNameHover:
+		return color.NRGBA{R: 70, G: 70, B: 70, A: 255}
+	case theme.ColorNamePlaceHolder:
+		return color.NRGBA{R: 120, G: 120, B: 120, A: 255}
+	case theme.ColorNamePressed:
+		return color.NRGBA{R: 80, G: 80, B: 80, A: 255}
+	case theme.ColorNamePrimary:
+		return color.NRGBA{R: 90, G: 90, B: 90, A: 255}
+	case theme.ColorNameScrollBar:
+		return color.NRGBA{R: 60, G: 60, B: 60, A: 255}
+	case theme.ColorNameShadow:
+		return color.NRGBA{R: 0, G: 0, B: 0, A: 100}
 	default:
 		return theme.DefaultTheme().Color(name, variant)
 	}
@@ -151,15 +190,19 @@ func main() {
 	myWindow.Resize(fyne.NewSize(180, 300))
 	myWindow.CenterOnScreen()
 
-	// Search entry
-	searchEntry := widget.NewEntry()
+	// Search entry with custom ESC handling
+	searchEntry := newCustomEntry()
 	searchEntry.SetPlaceHolder("Search emoji...")
+	searchEntry.onEscape = func() {
+		myApp.Quit()
+	}
 
 	// Grid for emojis
 	var emojiButtons []*widget.Button
 	var emojiCallbacks []func()
 	var currentGrid *fyne.Container
 	var selectedIndex int
+	var searchHasFocus = true
 
 	// Function to update emoji grid
 	updateEmojis := func(query string) {
@@ -197,11 +240,12 @@ func main() {
 		scroll.Refresh()
 	}
 
-	// Handle Enter from search to select first emoji
+	// Handle Enter from search - move focus to first emoji
 	searchEntry.OnSubmitted = func(text string) {
 		if len(emojiCallbacks) > 0 {
 			selectedIndex = 0
-			// Don't insert - just set selection
+			searchHasFocus = false
+			myWindow.Canvas().Unfocus() // Remove focus from search
 		}
 	}
 
@@ -211,18 +255,26 @@ func main() {
 	// Search handler
 	searchEntry.OnChanged = func(text string) {
 		updateEmojis(text)
-		selectedIndex = -1 // Reset selection when search changes
+		selectedIndex = -1    // Reset selection when search changes
+		searchHasFocus = true // Return focus to search
+		myWindow.Canvas().Focus(searchEntry)
 	}
 
 	// Keyboard navigation
 	myWindow.Canvas().SetOnTypedKey(func(ev *fyne.KeyEvent) {
-		// Escape always closes
+		// Escape always closes, regardless of focus
 		if ev.Name == fyne.KeyEscape {
 			myApp.Quit()
 			return
 		}
 
-		// Navigation only works when we have emojis
+		// If search has focus and Enter is pressed, handle in OnSubmitted
+		// Other keys only work when focus is not on search
+		if searchHasFocus {
+			return
+		}
+
+		// Navigation only works when we have emojis and focus is not on search
 		if len(emojiCallbacks) == 0 {
 			return
 		}
@@ -253,7 +305,7 @@ func main() {
 				selectedIndex++
 			}
 		case fyne.KeyEnter, fyne.KeyReturn:
-			// Only insert if something is selected
+			// Insert selected emoji
 			if selectedIndex >= 0 && selectedIndex < len(emojiCallbacks) {
 				emojiCallbacks[selectedIndex]()
 			}
