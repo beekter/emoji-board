@@ -46,4 +46,4 @@ nix run github:Quoteme/emoji-board
 
 ---
 
-[^1]: Currently only works on KDE Plasma, because finding the active window requires `kdotool`
+[^1]: Currently only works on KDE Plasma, because finding the active window requires `xdotool`

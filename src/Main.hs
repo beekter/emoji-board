@@ -85,10 +85,10 @@ typeText windowIdToTypeInfo text = do
   -- Get the ID of the emoji-keyboard window (after it has been created and is
   -- therefor focused). We will need this value, when we try to refocus on the
   -- emoji-keyboard after we have typed some text into `focusedWindowID`.
-  emojiKeyboardWindowID <- head . lines <$> readProcess "kdotool" ["getactivewindow"] ""
+  emojiKeyboardWindowID <- head . lines <$> readProcess "xdotool" ["getactivewindow"] ""
   let
-    focus = readProcess "kdotool" ["windowactivate", windowIdToTypeInfo] ""
-    refocus = readProcess "kdotool" ["windowactivate", emojiKeyboardWindowID] ""
+    focus = readProcess "xdotool" ["windowactivate", windowIdToTypeInfo] ""
+    refocus = readProcess "xdotool" ["windowactivate", emojiKeyboardWindowID] ""
     copy = readProcess "wl-copy" [] $ T.unpack text
     -- simulate `ctrl+shift+v
     paste = readProcess "ydotool" ["key", "29:1", "42:1", "47:1", "47:0", "42:0", "29:0"] ""
@@ -100,7 +100,7 @@ main = do
   -- Get the ID of the currently focused window (before we open up the
   -- emoji-keyboard window).
   -- We do this, so we can focus on it during `typeText`!
-  focusedWindowID <- head . lines <$> readProcess "kdotool" ["getactivewindow"] ""
+  focusedWindowID <- head . lines <$> readProcess "xdotool" ["getactivewindow"] ""
   Gtk.init Nothing
   -- Create a new window
   window <- windowNew WindowTypeToplevel
