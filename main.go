@@ -2,7 +2,11 @@ package main
 
 import (
 	"image/color"
+	_ "image/png" // Register PNG format
+	"os"
 	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -340,25 +344,25 @@ type grayTheme struct{}
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 60, G: 60, B: 60, A: 255} // Lighter background (was 40,40,40)
+		return color.NRGBA{R: 45, G: 52, B: 54, A: 255} // Modern dark slate color
 	case theme.ColorNameButton:
-		return color.NRGBA{R: 80, G: 80, B: 80, A: 255} // Lighter buttons (was 60,60,60)
+		return color.NRGBA{R: 65, G: 72, B: 74, A: 255} // Slightly lighter
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 70, G: 70, B: 70, A: 255} // Lighter (was 50,50,50)
+		return color.NRGBA{R: 55, G: 62, B: 64, A: 255}
 	case theme.ColorNameInputBackground:
-		return color.NRGBA{R: 70, G: 70, B: 70, A: 255} // Lighter (was 50,50,50)
+		return color.NRGBA{R: 55, G: 62, B: 64, A: 255}
 	case theme.ColorNameForeground:
 		return color.NRGBA{R: 220, G: 220, B: 220, A: 255}
 	case theme.ColorNameHover:
-		return color.NRGBA{R: 90, G: 90, B: 90, A: 255} // Lighter (was 70,70,70)
+		return color.NRGBA{R: 75, G: 82, B: 84, A: 255}
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 140, G: 140, B: 140, A: 255} // Lighter (was 120,120,120)
+		return color.NRGBA{R: 140, G: 140, B: 140, A: 255}
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 100, G: 100, B: 100, A: 255} // Lighter (was 80,80,80)
+		return color.NRGBA{R: 85, G: 92, B: 94, A: 255}
 	case theme.ColorNamePrimary:
-		return color.NRGBA{R: 110, G: 110, B: 110, A: 255} // Lighter (was 90,90,90)
+		return color.NRGBA{R: 95, G: 102, B: 104, A: 255}
 	case theme.ColorNameScrollBar:
-		return color.NRGBA{R: 80, G: 80, B: 80, A: 255} // Lighter (was 60,60,60)
+		return color.NRGBA{R: 75, G: 82, B: 84, A: 255}
 	case theme.ColorNameShadow:
 		return color.NRGBA{R: 0, G: 0, B: 0, A: 100}
 	default:
@@ -378,7 +382,69 @@ func (grayTheme) Size(name fyne.ThemeSizeName) float32 {
 	return theme.DefaultTheme().Size(name)
 }
 
-// getAllEmojis returns all available emojis from the library in natural order
+// getEmojiCategory returns a category order for sorting
+// Lower numbers come first (faces and people first, then other categories)
+func getEmojiCategory(emojiStr string) int {
+	if len(emojiStr) == 0 {
+		return 999
+	}
+
+	// Get first rune to determine category based on Unicode ranges
+	firstRune := []rune(emojiStr)[0]
+	codePoint := int(firstRune)
+
+	// Emoticons & Smileys (U+1F600-U+1F64F) - faces and emotions
+	if codePoint >= 0x1F600 && codePoint <= 0x1F64F {
+		return 0
+	}
+	// People & Body (U+1F466-U+1F4FF and others)
+	if (codePoint >= 0x1F466 && codePoint <= 0x1F487) ||
+		(codePoint >= 0x1F574 && codePoint <= 0x1F5FF) ||
+		(codePoint >= 0x1F926 && codePoint <= 0x1F937) ||
+		(codePoint >= 0x1F9D0 && codePoint <= 0x1F9FF) {
+		return 1
+	}
+	// Animals & Nature (U+1F400-U+1F43F, U+1F980-U+1F9CF)
+	if (codePoint >= 0x1F400 && codePoint <= 0x1F43F) ||
+		(codePoint >= 0x1F980 && codePoint <= 0x1F9CF) {
+		return 2
+	}
+	// Food & Drink (U+1F32D-U+1F37F, U+1F950-U+1F96F)
+	if (codePoint >= 0x1F32D && codePoint <= 0x1F37F) ||
+		(codePoint >= 0x1F950 && codePoint <= 0x1F96F) {
+		return 3
+	}
+	// Activities & Sports (U+1F3A0-U+1F3F0, U+1F93A-U+1F94F)
+	if (codePoint >= 0x1F3A0 && codePoint <= 0x1F3F0) ||
+		(codePoint >= 0x1F93A && codePoint <= 0x1F94F) {
+		return 4
+	}
+	// Travel & Places (U+1F680-U+1F6FF, U+1F6E0-U+1F6EC)
+	if codePoint >= 0x1F680 && codePoint <= 0x1F6FF {
+		return 5
+	}
+	// Objects (U+1F4A0-U+1F4FF, U+1F50A-U+1F53D, U+1F56F-U+1F570)
+	if (codePoint >= 0x1F4A0 && codePoint <= 0x1F4FF) ||
+		(codePoint >= 0x1F50A && codePoint <= 0x1F53D) ||
+		(codePoint >= 0x1F56F && codePoint <= 0x1F570) {
+		return 6
+	}
+	// Symbols (U+1F300-U+1F320, hearts, arrows, etc.)
+	if (codePoint >= 0x1F300 && codePoint <= 0x1F320) ||
+		(codePoint >= 0x2600 && codePoint <= 0x26FF) ||
+		(codePoint >= 0x2700 && codePoint <= 0x27BF) {
+		return 7
+	}
+	// Flags (U+1F1E6-U+1F1FF)
+	if codePoint >= 0x1F1E6 && codePoint <= 0x1F1FF {
+		return 8
+	}
+
+	// Everything else
+	return 10
+}
+
+// getAllEmojis returns all available emojis sorted by category (faces first, then others)
 func getAllEmojis() []EmojiData {
 	var result []EmojiData
 	for key, emojiStr := range emoji.Map() {
@@ -387,8 +453,19 @@ func getAllEmojis() []EmojiData {
 			Key:   key,
 		})
 	}
-	// Keep emojis in their natural order (Unicode/insertion order)
-	// No sorting for "classical" order
+
+	// Sort by category first, then by key name within category
+	sort.Slice(result, func(i, j int) bool {
+		catI := getEmojiCategory(result[i].Emoji)
+		catJ := getEmojiCategory(result[j].Emoji)
+
+		if catI != catJ {
+			return catI < catJ
+		}
+		// Within same category, sort by key name
+		return result[i].Key < result[j].Key
+	})
+
 	return result
 }
 
@@ -463,6 +540,25 @@ func main() {
 	myWindow := myApp.NewWindow("Emoji Keyboard")
 	myWindow.Resize(fyne.NewSize(180, 300))
 	myWindow.CenterOnScreen()
+
+	// Set window icon
+	iconPath := "icon.png"
+	// Try to find icon.png in the same directory as the executable
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		potentialPath := filepath.Join(exeDir, "icon.png")
+		if _, err := os.Stat(potentialPath); err == nil {
+			iconPath = potentialPath
+		}
+	}
+	// Also try current directory
+	if _, err := os.Stat("icon.png"); err == nil {
+		iconPath = "icon.png"
+	}
+
+	if iconResource, err := fyne.LoadResourceFromPath(iconPath); err == nil {
+		myWindow.SetIcon(iconResource)
+	}
 
 	// Callback for emoji selection
 	onEmojiSelected := func(emojiStr string) {
