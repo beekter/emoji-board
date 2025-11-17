@@ -238,7 +238,7 @@ func (r *emojiGridRenderer) Refresh() {
 
 	for i, e := range r.grid.emojis {
 		text := canvas.NewText(e.Emoji, color.White)
-		text.TextSize = 20 // Reduced from 24 to 20 for smaller emojis
+		text.TextSize = 21 // Reduced from 24 to 21 for smaller emojis
 
 		col := i % r.grid.columns
 		row := i / r.grid.columns
@@ -328,7 +328,7 @@ type grayTheme struct{}
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 0x33, G: 0x66, B: 0x66, A: 255} // #336666
+		return color.NRGBA{R: 0x33, G: 0x4d, B: 0x66, A: 255} // #334d66
 	case theme.ColorNameButton:
 		return color.NRGBA{R: 0x72, G: 0x9b, B: 0xa7, A: 255} // Slightly lighter
 	case theme.ColorNameDisabledButton:
