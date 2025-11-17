@@ -1,39 +1,25 @@
-# Maintainer: Luca Leon Happel <lucahappel99@gmx.de>
 pkgname=emoji-board
 pkgver=1.0
 pkgrel=1
-pkgdesc="A super simple, blazing fast, and lightweight emoji picker for Wayland"
+pkgdesc="Fyne emoji picker for Wayland/X11"
 arch=('x86_64')
 url="https://github.com/beekter/emoji-board"
-license=('BSD')
-depends=('gmp' 'libffi' 'gtk3' 'xdotool' 'wl-clipboard' 'ydotool')
-makedepends=('ghc' 'cabal-install')
-source=("git+$url.git")
-sha256sums=('SKIP')
+license=('BSD-3-Clause')
+depends=('xdotool' 'wl-clipboard' 'noto-fonts-emoji')
+makedepends=('go')
 
 build() {
-    cd "$srcdir/$pkgname"
-    
-    # Update cabal package list
-    cabal update
-    
-    # Build the project
-    cabal build
+    cd "$startdir"
+    export CGO_ENABLED=1
+    export GOFLAGS="-buildmode=pie -trimpath -modcacherw"
+    go build -o emoji-keyboard .
 }
 
 package() {
-    cd "$srcdir/$pkgname"
-    
-    # Find the built executable in the cabal dist directory
-    local exe=$(find dist-newstyle -name emoji-keyboard -type f -executable | head -n1)
-    
-    # Install the binary
-    install -Dm755 "$exe" "$pkgdir/usr/bin/emoji-board"
-    
-    # Install the README as documentation
-    install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+    cd "$startdir"
+    install -Dm755 emoji-keyboard "$pkgdir/usr/bin/emoji-keyboard"
+    install -Dm644 emoji-keyboard.desktop "$pkgdir/usr/share/applications/emoji-keyboard.desktop"
 }
 
-# Note: makepkg automatically cleans up the src/ and pkg/ directories 
-# after building and packaging, removing all build artifacts
+
 
