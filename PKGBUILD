@@ -4,35 +4,36 @@ pkgver=1.0
 pkgrel=1
 pkgdesc="A super simple, blazing fast, and lightweight emoji picker for Wayland"
 arch=('x86_64')
-url="https://github.com/Quoteme/emoji-board"
+url="https://github.com/beekter/emoji-board"
 license=('BSD')
 depends=('gmp' 'libffi' 'gtk3' 'xdotool' 'wl-clipboard' 'ydotool')
-makedepends=('ghc' 'cabal-install' 'git')
-source=()
-sha256sums=()
+makedepends=('ghc' 'cabal-install')
+source=("git+$url.git")
+sha256sums=('SKIP')
 
 build() {
-    cd "$srcdir/.."
+    cd "$srcdir/$pkgname"
     
     # Update cabal package list
     cabal update
     
     # Build the project
-    cabal build --builddir="$srcdir/dist"
+    cabal build
 }
 
 package() {
-    cd "$srcdir/.."
+    cd "$srcdir/$pkgname"
     
     # Find the built executable in the cabal dist directory
-    local exe=$(find "$srcdir/dist" -name emoji-keyboard -type f -executable)
+    local exe=$(find dist-newstyle -name emoji-keyboard -type f -executable | head -n1)
     
     # Install the binary
     install -Dm755 "$exe" "$pkgdir/usr/bin/emoji-board"
     
-    # Install the license
+    # Install the README as documentation
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }
 
-# Cleanup function is handled automatically by makepkg
-# It removes the src/ and pkg/ directories after building and packaging
+# Note: makepkg automatically cleans up the src/ and pkg/ directories 
+# after building and packaging, removing all build artifacts
+

@@ -2,3 +2,9 @@ out
 result
 src/assets/emoji.json
 dist-newstyle
+
+# PKGBUILD artifacts
+pkg/
+*.pkg.tar.*
+*.tar.gz
+
