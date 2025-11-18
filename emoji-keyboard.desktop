@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Emoji Keyboard
+Comment=Emoji picker for KDE Wayland (via XWayland)
+Exec=emoji-keyboard
+Icon=input-keyboard
+Terminal=false
+Categories=Utility;Accessibility;
+Keywords=emoji;picker;emoticon;
+StartupNotify=false
+X-KDE-StartupNotify=false
+

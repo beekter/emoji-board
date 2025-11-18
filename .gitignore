@@ -1,4 +1,10 @@
-out
-result
-src/assets/emoji.json
-dist-newstyle
+.idea
+
+# PKGBUILD artifacts
+pkg/
+*.pkg.tar.*
+*.tar.gz
+
+# OpenMoji PNG assets (embedded in binary)
+emojis/*.png
+
