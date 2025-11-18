@@ -8,3 +8,4 @@ pkg/
 # OpenMoji PNG assets (embedded in binary)
 emojis/*.png
 
+emoji-keyboard
