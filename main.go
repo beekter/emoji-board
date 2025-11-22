@@ -329,33 +329,33 @@ func (e *customEntry) TypedKey(key *fyne.KeyEvent) {
 	e.Entry.TypedKey(key)
 }
 
-// Custom dark gray theme
+// Custom dark theme matching original emoji-board design
 type grayTheme struct{}
 
 func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
 	switch name {
 	case theme.ColorNameBackground:
-		return color.NRGBA{R: 0x33, G: 0x4d, B: 0x66, A: 255} // #334d66
+		return color.NRGBA{R: 0x0e, G: 0x0a, B: 0x26, A: 255} // #0e0a26 - dark purple/navy
 	case theme.ColorNameButton:
-		return color.NRGBA{R: 0x72, G: 0x9b, B: 0xa7, A: 255} // Slightly lighter
+		return color.NRGBA{R: 0x1a, G: 0x15, B: 0x3d, A: 255} // Slightly lighter than background
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 0x6a, G: 0x93, B: 0x9f, A: 255}
+		return color.NRGBA{R: 0x15, G: 0x11, B: 0x2e, A: 255}
 	case theme.ColorNameInputBackground:
-		return color.NRGBA{R: 0x7a, G: 0xa3, B: 0xaf, A: 255} // Lighter for focus visibility
+		return color.NRGBA{R: 0x1f, G: 0x1a, B: 0x45, A: 255} // Lighter for visibility
 	case theme.ColorNameForeground:
-		return color.NRGBA{R: 220, G: 220, B: 220, A: 255}
+		return color.NRGBA{R: 230, G: 230, B: 230, A: 255} // Light gray text
 	case theme.ColorNameHover:
-		return color.NRGBA{R: 0x82, G: 0xab, B: 0xb7, A: 255}
+		return color.NRGBA{R: 0x25, G: 0x20, B: 0x50, A: 255} // Subtle hover
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 140, G: 160, B: 170, A: 255}
+		return color.NRGBA{R: 150, G: 150, B: 160, A: 255} // Medium gray placeholder
 	case theme.ColorNamePressed:
-		return color.NRGBA{R: 0x8a, G: 0xb3, B: 0xbf, A: 255}
+		return color.NRGBA{R: 0x2a, G: 0x25, B: 0x58, A: 255}
 	case theme.ColorNamePrimary:
-		return color.NRGBA{R: 0x92, G: 0xbb, B: 0xc7, A: 255}
+		return color.NRGBA{R: 0x30, G: 0x2a, B: 0x60, A: 255}
 	case theme.ColorNameScrollBar:
-		return color.NRGBA{R: 0x82, G: 0xab, B: 0xb7, A: 255}
+		return color.NRGBA{R: 0x25, G: 0x20, B: 0x50, A: 255}
 	case theme.ColorNameShadow:
-		return color.NRGBA{R: 0, G: 0, B: 0, A: 100}
+		return color.NRGBA{R: 0, G: 0, B: 0, A: 120}
 	default:
 		return theme.DefaultTheme().Color(name, variant)
 	}
