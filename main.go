@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	_ "image/png" // Register PNG format
 	"os"
@@ -17,6 +18,12 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/enescakir/emoji"
+)
+
+// Linux input event key codes for ydotool
+const (
+	keyLeftShift = 42  // KEY_LEFTSHIFT
+	keyInsert    = 110 // KEY_INSERT
 )
 
 // EmojiData represents an emoji with its key name
@@ -505,9 +512,13 @@ func typeEmoji(windowID, emojiStr string) error {
 	}
 
 	// Paste using Shift+Insert via ydotool
-	// Key codes: 42=Left Shift, 110=Insert
 	// Sequence: press shift, press insert, release insert, release shift
-	if err := exec.Command("ydotool", "key", "42:1", "110:1", "110:0", "42:0").Run(); err != nil {
+	if err := exec.Command("ydotool", "key",
+		fmt.Sprintf("%d:1", keyLeftShift),
+		fmt.Sprintf("%d:1", keyInsert),
+		fmt.Sprintf("%d:0", keyInsert),
+		fmt.Sprintf("%d:0", keyLeftShift),
+	).Run(); err != nil {
 		return err
 	}
 
