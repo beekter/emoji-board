@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	_ "image/png" // Register PNG format
 	"os"
@@ -17,6 +18,12 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/enescakir/emoji"
+)
+
+// Linux input event key codes for ydotool
+const (
+	keyLeftShift = 42  // KEY_LEFTSHIFT
+	keyInsert    = 110 // KEY_INSERT
 )
 
 // EmojiData represents an emoji with its key name
@@ -490,7 +497,7 @@ func fuzzySearch(query string, maxResults int) []EmojiData {
 	return results
 }
 
-// typeEmoji copies emoji to clipboard and pastes it using xdotool
+// typeEmoji copies emoji to clipboard and pastes it using kdotool + ydotool
 func typeEmoji(windowID, emojiStr string) error {
 	// Copy emoji to clipboard using wl-copy
 	cmd := exec.Command("wl-copy")
@@ -499,22 +506,28 @@ func typeEmoji(windowID, emojiStr string) error {
 		return err
 	}
 
-	// Focus target window
-	if err := exec.Command("xdotool", "windowactivate", windowID).Run(); err != nil {
+	// Focus target window using kdotool
+	if err := exec.Command("kdotool", "windowactivate", windowID).Run(); err != nil {
 		return err
 	}
 
-	// Paste using Shift+Insert
-	if err := exec.Command("xdotool", "key", "shift+Insert").Run(); err != nil {
+	// Paste using Shift+Insert via ydotool
+	// Sequence: press shift, press insert, release insert, release shift
+	if err := exec.Command("ydotool", "key",
+		fmt.Sprintf("%d:1", keyLeftShift),
+		fmt.Sprintf("%d:1", keyInsert),
+		fmt.Sprintf("%d:0", keyInsert),
+		fmt.Sprintf("%d:0", keyLeftShift),
+	).Run(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// getActiveWindow returns the currently focused window ID
+// getActiveWindow returns the currently focused window ID using kdotool
 func getActiveWindow() (string, error) {
-	out, err := exec.Command("xdotool", "getactivewindow").Output()
+	out, err := exec.Command("kdotool", "getactivewindow").Output()
 	if err != nil {
 		return "", err
 	}
