@@ -339,7 +339,7 @@ func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) colo
 	case theme.ColorNameButton:
 		return color.NRGBA{R: 0x1a, G: 0x15, B: 0x3d, A: 255} // Slightly lighter than background
 	case theme.ColorNameDisabledButton:
-		return color.NRGBA{R: 0x15, G: 0x11, B: 0x2e, A: 255}
+		return color.NRGBA{R: 0x28, G: 0x22, B: 0x4a, A: 255} // Better contrast for visibility
 	case theme.ColorNameInputBackground:
 		return color.NRGBA{R: 0x1f, G: 0x1a, B: 0x45, A: 255} // Lighter for visibility
 	case theme.ColorNameForeground:
@@ -347,7 +347,7 @@ func (grayTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) colo
 	case theme.ColorNameHover:
 		return color.NRGBA{R: 0x25, G: 0x20, B: 0x50, A: 255} // Subtle hover
 	case theme.ColorNamePlaceHolder:
-		return color.NRGBA{R: 150, G: 150, B: 160, A: 255} // Medium gray placeholder
+		return color.NRGBA{R: 180, G: 180, B: 190, A: 255} // Lighter placeholder for better contrast
 	case theme.ColorNamePressed:
 		return color.NRGBA{R: 0x2a, G: 0x25, B: 0x58, A: 255}
 	case theme.ColorNamePrimary:
