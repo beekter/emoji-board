@@ -490,7 +490,7 @@ func fuzzySearch(query string, maxResults int) []EmojiData {
 	return results
 }
 
-// typeEmoji copies emoji to clipboard and pastes it using xdotool
+// typeEmoji copies emoji to clipboard and pastes it using kdotool + ydotool
 func typeEmoji(windowID, emojiStr string) error {
 	// Copy emoji to clipboard using wl-copy
 	cmd := exec.Command("wl-copy")
@@ -499,22 +499,24 @@ func typeEmoji(windowID, emojiStr string) error {
 		return err
 	}
 
-	// Focus target window
-	if err := exec.Command("xdotool", "windowactivate", windowID).Run(); err != nil {
+	// Focus target window using kdotool
+	if err := exec.Command("kdotool", "windowactivate", windowID).Run(); err != nil {
 		return err
 	}
 
-	// Paste using Shift+Insert
-	if err := exec.Command("xdotool", "key", "shift+Insert").Run(); err != nil {
+	// Paste using Shift+Insert via ydotool
+	// Key codes: 42=Left Shift, 110=Insert
+	// Sequence: press shift, press insert, release insert, release shift
+	if err := exec.Command("ydotool", "key", "42:1", "110:1", "110:0", "42:0").Run(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// getActiveWindow returns the currently focused window ID
+// getActiveWindow returns the currently focused window ID using kdotool
 func getActiveWindow() (string, error) {
-	out, err := exec.Command("xdotool", "getactivewindow").Output()
+	out, err := exec.Command("kdotool", "getactivewindow").Output()
 	if err != nil {
 		return "", err
 	}
