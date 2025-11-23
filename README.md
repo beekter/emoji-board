@@ -2,8 +2,6 @@
 
 GTK emoji picker for XWayland built with Wails v2 (Go + Web frontend)
 
-**Возникли проблемы со сборкой?** См. [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-
 ## Features
 
 - 🔍 **Fast emoji search** - Find emojis by name
@@ -13,93 +11,17 @@ GTK emoji picker for XWayland built with Wails v2 (Go + Web frontend)
 - 🖱️ **Mouse support** - Click to select emojis
 - 📦 **Wayland native** - Works on KDE Plasma with Wayland
 
-## Dependencies
-
-Runtime dependencies:
-- `kdotool` - Window management
-- `ydotool` - Keyboard input simulation
-- `wl-clipboard` - Clipboard operations
-- `noto-fonts-emoji` - Emoji font
-- `webkit2gtk` - Web view (webkit2gtk-4.1 on modern systems)
-
-Build dependencies:
-- `go` >= 1.25
-- `gtk3` - GTK3 development files
-- `webkit2gtk` - WebKit2GTK development files
-- `gcc` or `clang` - C compiler (for CGO)
-- `pkg-config` - For finding libraries
-
-**Note:** This project requires CGO (C bindings) for webkit2gtk integration. Ensure your Go installation supports CGO.
-
-**Arch Linux users:** All dependencies are automatically handled by the PKGBUILD. Simply run `makepkg -si` and pacman will install everything needed.
-
-## Building
-
-### Quick Start (Easiest)
-
-```bash
-# Using Make (recommended)
-make build
-
-# Or using the build script
-./build.sh
-```
-
-### Using Wails directly
-
-```bash
-# Install Wails CLI
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-# Add wails to PATH
-export PATH=$PATH:$(go env GOPATH)/bin
-
-# Build
-wails build
-```
-
-### Using Go directly (without Wails CLI)
-
-```bash
-# Build all Go files in the project with required Wails tags
-go build -tags desktop,production .
-# Or specify output name
-go build -tags desktop,production -o emoji-keyboard .
-```
-
-**Important:** 
-- Do NOT use `go build main.go` - it only compiles main.go and misses app.go
-- MUST use `-tags desktop,production` for Wails apps to work correctly
-
-### Using PKGBUILD (Arch Linux)
+## Building (Arch Linux)
 
 ```bash
 makepkg -si
 ```
 
-**Note:** 
-- PKGBUILD автоматически очищает все кеши и артефакты перед сборкой (pkg/, vendor/, build/, и т.д.)
-- Использует `go build` с правильными tags вместо `wails build`
-- Все зависимости (kdotool, ydotool, wl-clipboard, webkit2gtk) автоматически устанавливаются pacman
-- Просто запустите `makepkg -si` - всё остальное произойдёт автоматически!
-
-## Installation
-
-After building with `make build` or `go build`:
-
-```bash
-sudo install -Dm755 emoji-keyboard /usr/bin/emoji-keyboard
-sudo install -Dm644 emoji-keyboard.desktop /usr/share/applications/emoji-keyboard.desktop
-sudo install -Dm644 icon.png /usr/share/pixmaps/emoji-keyboard.png
-```
-
-After building with `wails build`:
-
-```bash
-sudo install -Dm755 build/bin/emoji-keyboard /usr/bin/emoji-keyboard
-sudo install -Dm644 emoji-keyboard.desktop /usr/share/applications/emoji-keyboard.desktop
-sudo install -Dm644 icon.png /usr/share/pixmaps/emoji-keyboard.png
-```
+Всё! PKGBUILD автоматически:
+- Очищает все старые кеши и артефакты
+- Устанавливает все зависимости (kdotool, ydotool, wl-clipboard, webkit2gtk, go, gtk3)
+- Собирает приложение с правильными build tags
+- Устанавливает в систему
 
 ## Usage
 
