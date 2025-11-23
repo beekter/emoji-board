@@ -5,9 +5,10 @@ all: build
 
 # Build with standard Go (no Wails CLI needed)
 # Note: CGO_ENABLED=1 is required for webkit2gtk integration
+# -tags desktop,production are required by Wails
 build:
 	@echo "Building with Go..."
-	CGO_ENABLED=1 go build -o emoji-keyboard .
+	CGO_ENABLED=1 go build -tags desktop,production -o emoji-keyboard .
 	@echo "Build complete: ./emoji-keyboard"
 
 # Build with Wails CLI (for production builds)

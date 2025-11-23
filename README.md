@@ -59,13 +59,15 @@ wails build
 ### Using Go directly (without Wails CLI)
 
 ```bash
-# Build all Go files in the project
-go build .
+# Build all Go files in the project with required Wails tags
+go build -tags desktop,production .
 # Or specify output name
-go build -o emoji-keyboard .
+go build -tags desktop,production -o emoji-keyboard .
 ```
 
-**Note**: Do NOT use `go build main.go` as it will only compile `main.go` and miss `app.go`, causing "undefined: NewApp" error.
+**Important:** 
+- Do NOT use `go build main.go` - it only compiles main.go and misses app.go
+- MUST use `-tags desktop,production` for Wails apps to work correctly
 
 ### Using PKGBUILD (Arch Linux)
 

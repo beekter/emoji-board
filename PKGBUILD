@@ -13,8 +13,8 @@ build() {
     export CGO_ENABLED=1
     export GOFLAGS="-buildmode=pie -trimpath -modcacherw"
     # Build with standard Go (no Wails CLI needed)
-    # This avoids webkit2gtk-4.0 vs 4.1 compatibility issues
-    go build -o emoji-keyboard .
+    # Wails requires -tags desktop,production for proper compilation
+    go build -tags desktop,production -o emoji-keyboard .
 }
 
 package() {
