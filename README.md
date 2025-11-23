@@ -24,6 +24,10 @@ Build dependencies:
 - `go` >= 1.25
 - `gtk3` - GTK3 development files
 - `webkit2gtk` - WebKit2GTK development files
+- `gcc` or `clang` - C compiler (for CGO)
+- `pkg-config` - For finding libraries
+
+**Note:** This project requires CGO (C bindings) for webkit2gtk integration. Ensure your Go installation supports CGO.
 
 ## Building
 
