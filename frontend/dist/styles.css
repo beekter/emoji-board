@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+:root {
+    --emoji-button-size: 60px;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #1E2732;
@@ -70,8 +74,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 60px;
-    height: 60px;
+    width: var(--emoji-button-size);
+    height: var(--emoji-button-size);
     font-size: 28px;
     cursor: pointer;
     border-radius: 8px;

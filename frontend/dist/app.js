@@ -33,8 +33,14 @@ function handleGlobalKeydown(e) {
         return;
     }
     
-    // Check if this is a printable character (including space)
-    const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey;
+    // Check if this is a printable character (letters, numbers, punctuation, space)
+    // Exclude special keys like Tab, Delete, F1-F12, etc.
+    const isPrintable = e.key.length === 1 && 
+                       !e.ctrlKey && 
+                       !e.altKey && 
+                       !e.metaKey &&
+                       e.key !== 'Tab' &&
+                       e.key !== 'Delete';
     
     // If it's a printable character, focus search and let it handle the input
     if (isPrintable) {
