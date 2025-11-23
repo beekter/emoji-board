@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "emoji-keyboard",
+  "outputfilename": "emoji-keyboard",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "author": {
+    "name": "beekter",
+    "email": ""
+  },
+  "info": {
+    "productName": "Emoji Keyboard",
+    "productVersion": "1.0.0",
+    "comments": "Emoji picker for KDE Wayland",
+    "companyName": "beekter"
+  }
+}
