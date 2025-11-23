@@ -23,12 +23,12 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "Emoji Keyboard",
-		Width:  350,
-		Height: 450,
-		MinWidth:  350,
-		MinHeight: 450,
-		MaxWidth:  350,
-		MaxHeight: 450,
+		Width:  320,
+		Height: 400,
+		MinWidth:  320,
+		MinHeight: 400,
+		MaxWidth:  320,
+		MaxHeight: 400,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

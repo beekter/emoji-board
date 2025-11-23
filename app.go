@@ -128,19 +128,27 @@ func getEmojiCategory(emojiStr string) int {
 
 // getAllEmojis returns all available emojis sorted by category
 func getAllEmojis() []EmojiData {
-	var result []EmojiData
+	// Use a map to deduplicate emojis (many keys map to same emoji)
+	uniqueEmojis := make(map[string]string)
+	
 	for key, emojiStr := range emoji.Map() {
+		// Keep the first (or shortest) key for each unique emoji
+		if existingKey, exists := uniqueEmojis[emojiStr]; !exists || len(key) < len(existingKey) {
+			uniqueEmojis[emojiStr] = key
+		}
+	}
+	
+	// Add missing emojis not in the library
+	uniqueEmojis["\U0001F979"] = ":face_holding_back_tears:" // 🥹 face holding back tears
+	
+	// Convert map to slice
+	var result []EmojiData
+	for emojiStr, key := range uniqueEmojis {
 		result = append(result, EmojiData{
 			Emoji: emojiStr,
 			Key:   key,
 		})
 	}
-	
-	// Add missing emojis not in the library
-	result = append(result, EmojiData{
-		Emoji: "\U0001F979", // 🥹 face holding back tears
-		Key:   ":face_holding_back_tears:",
-	})
 
 	// Sort by category first, then by Unicode code point within category
 	sort.Slice(result, func(i, j int) bool {

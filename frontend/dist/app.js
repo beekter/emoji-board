@@ -28,12 +28,12 @@ async function init() {
 
 // Global keyboard handler to ensure search input always receives text input
 function handleGlobalKeydown(e) {
-    // If the search input already has focus, let it handle normally
+    // If the search input already has focus, let it handle all keys normally (including Backspace/Delete)
     if (document.activeElement === searchInput) {
         return;
     }
     
-    // List of non-printable keys to ignore
+    // List of non-printable keys to ignore when not in search
     const specialKeys = [
         'Escape', 'Enter', 'Tab', 'Backspace', 'Delete',
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
