@@ -33,14 +33,21 @@ function handleGlobalKeydown(e) {
         return;
     }
     
-    // Check if this is a printable character (letters, numbers, punctuation, space)
-    // Exclude special keys like Tab, Delete, F1-F12, etc.
+    // List of non-printable keys to ignore
+    const specialKeys = [
+        'Escape', 'Enter', 'Tab', 'Backspace', 'Delete',
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'Home', 'End', 'PageUp', 'PageDown',
+        'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+        'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock'
+    ];
+    
+    // Check if this is a printable character
     const isPrintable = e.key.length === 1 && 
                        !e.ctrlKey && 
                        !e.altKey && 
                        !e.metaKey &&
-                       e.key !== 'Tab' &&
-                       e.key !== 'Delete';
+                       !specialKeys.includes(e.key);
     
     // If it's a printable character, focus search and let it handle the input
     if (isPrintable) {
