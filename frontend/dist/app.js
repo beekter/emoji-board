@@ -35,8 +35,21 @@ function handleGlobalKeydown(e) {
     
     // Handle Backspace/Delete to focus search and allow text deletion
     if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
         searchInput.focus();
-        // Let the event propagate to the search input for deletion
+        
+        // Manually delete text based on which key was pressed
+        const currentValue = searchInput.value;
+        if (e.key === 'Backspace' && currentValue.length > 0) {
+            // Delete character before cursor (at end since we just focused)
+            searchInput.value = currentValue.slice(0, -1);
+        } else if (e.key === 'Delete' && currentValue.length > 0) {
+            // For Delete, also remove from end for simplicity
+            searchInput.value = currentValue.slice(0, -1);
+        }
+        
+        // Trigger input event for search to update
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         return;
     }
     
