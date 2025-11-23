@@ -33,9 +33,16 @@ function handleGlobalKeydown(e) {
         return;
     }
     
+    // Handle Backspace/Delete to focus search and allow text deletion
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+        searchInput.focus();
+        // Let the event propagate to the search input for deletion
+        return;
+    }
+    
     // List of non-printable keys to ignore when not in search
     const specialKeys = [
-        'Escape', 'Enter', 'Tab', 'Backspace', 'Delete',
+        'Escape', 'Enter', 'Tab',
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
         'Home', 'End', 'PageUp', 'PageDown',
         'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',

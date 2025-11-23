@@ -8,17 +8,6 @@ license=('BSD-3-Clause')
 depends=('kdotool' 'ydotool' 'wl-clipboard' 'noto-fonts-emoji' 'webkit2gtk')
 makedepends=('go' 'gtk3' 'webkit2gtk')
 
-prepare() {
-    cd "$startdir"
-    # Clean all previous build artifacts and caches
-    msg2 "Cleaning previous build artifacts..."
-    rm -rf pkg/ vendor/ build/ emoji-keyboard emoji-board
-    rm -rf frontend/wailsjs/
-    # Clean Go build cache for this module
-    go clean -cache -modcache -i -r 2>/dev/null || true
-    msg2 "Clean complete"
-}
-
 build() {
     cd "$startdir"
     export CGO_ENABLED=1
