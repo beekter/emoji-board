@@ -6,8 +6,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #334d66;
-    color: #dcdcdc;
+    background-color: #1E2732;
+    color: #E8EAED;
     overflow: hidden;
     user-select: none;
     -webkit-user-select: none;
@@ -21,21 +21,21 @@ body {
 }
 
 #search {
-    padding: 8px 12px;
+    padding: 12px 16px;
     font-size: 14px;
     border: none;
-    background-color: #7aa3af;
-    color: #fff;
+    background-color: #2D3748;
+    color: #E8EAED;
     outline: none;
     flex-shrink: 0;
 }
 
 #search::placeholder {
-    color: #8ca0aa;
+    color: #718096;
 }
 
 #search:focus {
-    background-color: #82abb7;
+    background-color: #374151;
 }
 
 #emoji-grid {
@@ -44,50 +44,56 @@ body {
     overflow-x: hidden;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 0;
-    padding: 4px;
+    gap: 6px;
+    padding: 8px;
     outline: none;
 }
 
 #emoji-grid::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
 }
 
 #emoji-grid::-webkit-scrollbar-track {
-    background: #334d66;
+    background: #1E2732;
 }
 
 #emoji-grid::-webkit-scrollbar-thumb {
-    background: #82abb7;
-    border-radius: 4px;
+    background: #4A5568;
+    border-radius: 5px;
 }
 
 #emoji-grid::-webkit-scrollbar-thumb:hover {
-    background: #8ab3bf;
+    background: #5A6678;
 }
 
 .emoji-item {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    aspect-ratio: 1;
-    font-size: 21px;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
     cursor: pointer;
-    border-radius: 6px;
-    transition: background-color 0.1s;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    border: 2px solid #374151;
+    background-color: #2D3748;
 }
 
 .emoji-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: #374151;
+    border-color: #4A5568;
+    transform: scale(1.05);
 }
 
 .emoji-item.selected {
-    background-color: rgba(255, 255, 255, 0.39);
+    background-color: #4A5568;
+    border-color: #5A6678;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
 }
 
 /* Hide scrollbar in Firefox */
 #emoji-grid {
     scrollbar-width: thin;
-    scrollbar-color: #82abb7 #334d66;
+    scrollbar-color: #4A5568 #1E2732;
 }

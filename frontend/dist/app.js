@@ -19,8 +19,28 @@ async function init() {
     searchInput.addEventListener('keydown', handleSearchKeydown);
     emojiGrid.addEventListener('keydown', handleGridKeydown);
     
+    // Global keyboard handler to always capture typing into search
+    document.addEventListener('keydown', handleGlobalKeydown);
+    
     // Prevent context menu
     document.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+// Global keyboard handler to ensure search input always receives text input
+function handleGlobalKeydown(e) {
+    // If the search input already has focus, let it handle normally
+    if (document.activeElement === searchInput) {
+        return;
+    }
+    
+    // Check if this is a printable character (including space)
+    const isPrintable = e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey;
+    
+    // If it's a printable character, focus search and let it handle the input
+    if (isPrintable) {
+        searchInput.focus();
+        // The keydown will be processed by the search input automatically
+    }
 }
 
 // Update emojis based on search

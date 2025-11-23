@@ -135,6 +135,12 @@ func getAllEmojis() []EmojiData {
 			Key:   key,
 		})
 	}
+	
+	// Add missing emojis not in the library
+	result = append(result, EmojiData{
+		Emoji: "\U0001F979", // 🥹 face holding back tears
+		Key:   ":face_holding_back_tears:",
+	})
 
 	// Sort by category first, then by Unicode code point within category
 	sort.Slice(result, func(i, j int) bool {
