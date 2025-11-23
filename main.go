@@ -23,12 +23,16 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "Emoji Keyboard",
-		Width:  180,
-		Height: 300,
+		Width:  320,
+		Height: 400,
+		MinWidth:  320,
+		MinHeight: 400,
+		MaxWidth:  320,
+		MaxHeight: 400,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 51, G: 77, B: 102, A: 255}, // #334d66
+		BackgroundColour: &options.RGBA{R: 30, G: 39, B: 50, A: 255}, // #1E2732 - dark blue-gray
 		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,
