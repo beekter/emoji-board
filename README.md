@@ -18,7 +18,7 @@ Runtime dependencies:
 - `ydotool` - Keyboard input simulation
 - `wl-clipboard` - Clipboard operations
 - `noto-fonts-emoji` - Emoji font
-- `webkit2gtk` - Web view
+- `webkit2gtk` - Web view (webkit2gtk-4.1 on modern systems)
 
 Build dependencies:
 - `go` >= 1.25
@@ -28,6 +28,8 @@ Build dependencies:
 - `pkg-config` - For finding libraries
 
 **Note:** This project requires CGO (C bindings) for webkit2gtk integration. Ensure your Go installation supports CGO.
+
+**Arch Linux users:** All dependencies are automatically handled by the PKGBUILD. Simply run `makepkg -si` and pacman will install everything needed.
 
 ## Building
 
@@ -71,9 +73,19 @@ go build -o emoji-keyboard .
 makepkg -si
 ```
 
+**Note:** The PKGBUILD uses `go build` instead of `wails build` to avoid webkit2gtk version compatibility issues. All dependencies (kdotool, ydotool, wl-clipboard, webkit2gtk) are automatically installed by pacman.
+
 ## Installation
 
-After building:
+After building with `make build` or `go build`:
+
+```bash
+sudo install -Dm755 emoji-keyboard /usr/bin/emoji-keyboard
+sudo install -Dm644 emoji-keyboard.desktop /usr/share/applications/emoji-keyboard.desktop
+sudo install -Dm644 icon.png /usr/share/pixmaps/emoji-keyboard.png
+```
+
+After building with `wails build`:
 
 ```bash
 sudo install -Dm755 build/bin/emoji-keyboard /usr/bin/emoji-keyboard
