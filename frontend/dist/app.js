@@ -157,8 +157,13 @@ function updateSelection() {
 function scrollToSelected() {
     if (selectedIndex < 0 || selectedIndex >= emojis.length) return;
     
+    const items = emojiGrid.querySelectorAll('.emoji-item');
+    if (items.length === 0) return;
+    
     const row = Math.floor(selectedIndex / COLUMNS);
-    const cellHeight = 36; // Approximate height of each cell
+    
+    // Get actual cell height from the first item
+    const cellHeight = items[0].offsetHeight;
     const targetY = row * cellHeight;
     
     const gridRect = emojiGrid.getBoundingClientRect();
