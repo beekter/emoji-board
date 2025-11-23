@@ -5,6 +5,9 @@ pkg/
 *.pkg.tar.*
 *.tar.gz
 
+# Go vendor
+vendor/
+
 # Wails build artifacts
 build/
 frontend/wailsjs/

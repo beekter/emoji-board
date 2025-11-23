@@ -2,6 +2,8 @@
 
 GTK emoji picker for XWayland built with Wails v2 (Go + Web frontend)
 
+**Возникли проблемы со сборкой?** См. [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+
 ## Features
 
 - 🔍 **Fast emoji search** - Find emojis by name
