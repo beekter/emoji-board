@@ -1,34 +1,5 @@
 # Troubleshooting / Устранение проблем
 
-## "permission denied" при makepkg
-
-Если вы получаете ошибку:
-```
-go: github.com/beekter/emoji-board/pkg: open .../pkg: permission denied
-```
-
-**Решение:**
-
-1. Удалите старую директорию `pkg/` (артефакт от makepkg):
-   ```bash
-   rm -rf pkg/
-   ```
-
-2. Удалите директорию `vendor/` если она есть (артефакт от go mod vendor):
-   ```bash
-   rm -rf vendor/
-   ```
-
-3. Убедитесь что у вас последняя версия:
-   ```bash
-   git pull origin copilot/rewrite-to-wails
-   ```
-
-4. Пересоберите:
-   ```bash
-   makepkg -si
-   ```
-
 ## "Wails applications will not build without the correct build tags"
 
 Эта ошибка означает что приложение собрано без необходимых build tags.
@@ -45,10 +16,32 @@ go build -tags desktop,production -o emoji-keyboard .
 make build
 ```
 
-## Очистка всех артефактов сборки
+## Проблемы с makepkg
+
+Начиная с последней версии, PKGBUILD автоматически очищает все кеши и артефакты перед сборкой.
+
+Если всё равно возникают проблемы:
+
+1. Обновите код:
+   ```bash
+   git pull origin copilot/rewrite-to-wails
+   ```
+
+2. Просто запустите:
+   ```bash
+   makepkg -si
+   ```
+
+PKGBUILD автоматически очистит:
+- Старую директорию `pkg/`
+- Директорию `vendor/`
+- Артефакты сборки `build/`, `emoji-keyboard`, `emoji-board`
+- Сгенерированные файлы `frontend/wailsjs/`
+- Go кеши сборки
+
+## Ручная очистка (если нужно)
 
 ```bash
 make clean
 rm -rf pkg/ vendor/
-git clean -fdx  # ВНИМАНИЕ: удалит все неотслеживаемые файлы!
 ```

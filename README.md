@@ -77,7 +77,11 @@ go build -tags desktop,production -o emoji-keyboard .
 makepkg -si
 ```
 
-**Note:** The PKGBUILD uses `go build` instead of `wails build` to avoid webkit2gtk version compatibility issues. All dependencies (kdotool, ydotool, wl-clipboard, webkit2gtk) are automatically installed by pacman.
+**Note:** 
+- PKGBUILD автоматически очищает все кеши и артефакты перед сборкой (pkg/, vendor/, build/, и т.д.)
+- Использует `go build` с правильными tags вместо `wails build`
+- Все зависимости (kdotool, ydotool, wl-clipboard, webkit2gtk) автоматически устанавливаются pacman
+- Просто запустите `makepkg -si` - всё остальное произойдёт автоматически!
 
 ## Installation
 
