@@ -132,14 +132,16 @@ func getAllEmojis() []EmojiData {
 	uniqueEmojis := make(map[string]string)
 	
 	for key, emojiStr := range emoji.Map() {
-		// Keep the first (or shortest) key for each unique emoji
+		// Keep the shortest key for each unique emoji (more concise and readable)
 		if existingKey, exists := uniqueEmojis[emojiStr]; !exists || len(key) < len(existingKey) {
 			uniqueEmojis[emojiStr] = key
 		}
 	}
 	
-	// Add missing emojis not in the library
-	uniqueEmojis["\U0001F979"] = ":face_holding_back_tears:" // 🥹 face holding back tears
+	// Add missing emojis not in the library (add after deduplication to ensure they're included)
+	if _, exists := uniqueEmojis["\U0001F979"]; !exists {
+		uniqueEmojis["\U0001F979"] = ":face_holding_back_tears:" // 🥹 face holding back tears
+	}
 	
 	// Convert map to slice
 	var result []EmojiData
