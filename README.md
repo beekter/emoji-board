@@ -2,6 +2,7 @@
 
 GTK emoji picker for XWayland
 
+Built with Wails v2 (Go + Web frontend)
 
 ### Credits
 

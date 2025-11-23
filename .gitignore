@@ -5,3 +5,12 @@ pkg/
 *.pkg.tar.*
 *.tar.gz
 
+# Wails build artifacts
+build/
+frontend/wailsjs/
+*.fyne.bak
+
+# Binaries
+emoji-keyboard
+emoji-board
+

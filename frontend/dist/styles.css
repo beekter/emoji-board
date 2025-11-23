@@ -1,0 +1,93 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #334d66;
+    color: #dcdcdc;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+#search {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: none;
+    background-color: #7aa3af;
+    color: #fff;
+    outline: none;
+    flex-shrink: 0;
+}
+
+#search::placeholder {
+    color: #8ca0aa;
+}
+
+#search:focus {
+    background-color: #82abb7;
+}
+
+#emoji-grid {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    padding: 4px;
+    outline: none;
+}
+
+#emoji-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+#emoji-grid::-webkit-scrollbar-track {
+    background: #334d66;
+}
+
+#emoji-grid::-webkit-scrollbar-thumb {
+    background: #82abb7;
+    border-radius: 4px;
+}
+
+#emoji-grid::-webkit-scrollbar-thumb:hover {
+    background: #8ab3bf;
+}
+
+.emoji-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    font-size: 21px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.1s;
+}
+
+.emoji-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.emoji-item.selected {
+    background-color: rgba(255, 255, 255, 0.39);
+}
+
+/* Hide scrollbar in Firefox */
+#emoji-grid {
+    scrollbar-width: thin;
+    scrollbar-color: #82abb7 #334d66;
+}
