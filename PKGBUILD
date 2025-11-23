@@ -15,6 +15,8 @@ build() {
     # Install wails if not present
     if ! command -v wails &> /dev/null; then
         go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        # Add go bin to PATH
+        export PATH="$PATH:$(go env GOPATH)/bin"
     fi
     # Build with wails
     wails build -clean

@@ -27,9 +27,13 @@ Build dependencies:
 
 ## Building
 
-### Using the build script
+### Quick Start (Easiest)
 
 ```bash
+# Using Make (recommended)
+make build
+
+# Or using the build script
 ./build.sh
 ```
 
@@ -39,9 +43,23 @@ Build dependencies:
 # Install Wails CLI
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+# Add wails to PATH
+export PATH=$PATH:$(go env GOPATH)/bin
+
 # Build
 wails build
 ```
+
+### Using Go directly (without Wails CLI)
+
+```bash
+# Build all Go files in the project
+go build .
+# Or specify output name
+go build -o emoji-keyboard .
+```
+
+**Note**: Do NOT use `go build main.go` as it will only compile `main.go` and miss `app.go`, causing "undefined: NewApp" error.
 
 ### Using PKGBUILD (Arch Linux)
 
