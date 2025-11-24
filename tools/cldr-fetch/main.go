@@ -44,10 +44,8 @@ func main() {
 	// Always include English (loaded from repository JSON file)
 	languages := []string{"en"}
 	
-	// Parse locales and extract language codes only
-	// For example: kk_KZ -> add "kk" (Kazakh)
-	//             sah_RU -> add "sah" (Yakut), NOT "ru"
-	// We only extract the language part, not the region
+	// Parse locales and extract language codes
+	// Also maps region codes to their default/official languages
 	seen := make(map[string]bool)
 	seen["en"] = true
 	
@@ -62,8 +60,16 @@ func main() {
 				seen[lang] = true
 			}
 		}
-		// Note: We don't extract region codes as language codes anymore
-		// If user wants Russian, they should have ru_RU locale installed
+		
+		// If there's a region code, also add its default language
+		// This enables support for languages based on region (e.g., RU -> ru, GB -> en)
+		if len(parts) >= 2 {
+			region := strings.ToUpper(parts[1])
+			if defaultLang := getDefaultLanguageForRegion(region); defaultLang != "" && !seen[defaultLang] {
+				languages = append(languages, defaultLang)
+				seen[defaultLang] = true
+			}
+		}
 	}
 	
 	// Output header to stdout
@@ -157,6 +163,71 @@ func detectSystemLocalesFromCommand() []string {
 	}
 	
 	return locales
+}
+
+// getDefaultLanguageForRegion returns the default/official language for a region code
+// This allows locales like sah_RU to also include Russian (ru) keywords
+func getDefaultLanguageForRegion(region string) string {
+	// Map of region codes to their primary/official languages
+	// Only includes regions where the default language differs from English
+	regionToLanguage := map[string]string{
+		"RU": "ru", // Russia -> Russian
+		"UA": "uk", // Ukraine -> Ukrainian
+		"BY": "be", // Belarus -> Belarusian
+		"KZ": "kk", // Kazakhstan -> Kazakh (also Russian, but kk is primary)
+		"DE": "de", // Germany -> German
+		"AT": "de", // Austria -> German
+		"CH": "de", // Switzerland -> German (also French, Italian)
+		"FR": "fr", // France -> French
+		"BE": "fr", // Belgium -> French (also Dutch)
+		"CA": "fr", // Canada -> French (also English)
+		"ES": "es", // Spain -> Spanish
+		"MX": "es", // Mexico -> Spanish
+		"AR": "es", // Argentina -> Spanish
+		"IT": "it", // Italy -> Italian
+		"PT": "pt", // Portugal -> Portuguese
+		"BR": "pt", // Brazil -> Portuguese
+		"NL": "nl", // Netherlands -> Dutch
+		"PL": "pl", // Poland -> Polish
+		"CZ": "cs", // Czech Republic -> Czech
+		"SK": "sk", // Slovakia -> Slovak
+		"HU": "hu", // Hungary -> Hungarian
+		"RO": "ro", // Romania -> Romanian
+		"BG": "bg", // Bulgaria -> Bulgarian
+		"RS": "sr", // Serbia -> Serbian
+		"HR": "hr", // Croatia -> Croatian
+		"SI": "sl", // Slovenia -> Slovenian
+		"GR": "el", // Greece -> Greek
+		"TR": "tr", // Turkey -> Turkish
+		"JP": "ja", // Japan -> Japanese
+		"CN": "zh", // China -> Chinese
+		"TW": "zh", // Taiwan -> Chinese
+		"KR": "ko", // South Korea -> Korean
+		"VN": "vi", // Vietnam -> Vietnamese
+		"TH": "th", // Thailand -> Thai
+		"ID": "id", // Indonesia -> Indonesian
+		"MY": "ms", // Malaysia -> Malay
+		"PH": "tl", // Philippines -> Tagalog
+		"IN": "hi", // India -> Hindi
+		"PK": "ur", // Pakistan -> Urdu
+		"BD": "bn", // Bangladesh -> Bengali
+		"IR": "fa", // Iran -> Persian
+		"SA": "ar", // Saudi Arabia -> Arabic
+		"EG": "ar", // Egypt -> Arabic
+		"IL": "he", // Israel -> Hebrew
+		"SE": "sv", // Sweden -> Swedish
+		"NO": "nb", // Norway -> Norwegian Bokmål
+		"DK": "da", // Denmark -> Danish
+		"FI": "fi", // Finland -> Finnish
+		"EE": "et", // Estonia -> Estonian
+		"LV": "lv", // Latvia -> Latvian
+		"LT": "lt", // Lithuania -> Lithuanian
+	}
+	
+	if lang, ok := regionToLanguage[region]; ok {
+		return lang
+	}
+	return ""
 }
 
 // loadAnnotationsFromJSON loads emoji annotations from a local JSON file
