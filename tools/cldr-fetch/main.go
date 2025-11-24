@@ -60,6 +60,8 @@ func main() {
 		
 		if len(parts) >= 2 {
 			// Also try to load region as language code (e.g., RU from sah_RU)
+			// This enables language support based on region codes
+			// For example: sah_RU -> tries both 'sah' and 'ru' languages
 			region := strings.ToLower(parts[1])
 			if region != "" && !seen[region] {
 				languages = append(languages, region)
@@ -77,7 +79,7 @@ func main() {
 	emojiDatabase := make(map[string]*EmojiInfo)
 	
 	// Load English from repository (always available)
-	if err := loadAnnotationsFromFile("cldr_data/en.xml", emojiDatabase); err != nil {
+	if err := loadAnnotationsFromFile("cldr_data/en.xml", emojiDatabase, "en"); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to load English data from repository: %v\n", err)
 		os.Exit(1)
 	}
@@ -160,13 +162,13 @@ func detectSystemLocalesFromCommand() []string {
 }
 
 // loadAnnotationsFromFile loads emoji annotations from a local file
-func loadAnnotationsFromFile(filePath string, emojiDatabase map[string]*EmojiInfo) error {
+func loadAnnotationsFromFile(filePath string, emojiDatabase map[string]*EmojiInfo, langCode string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 	
-	return parseAnnotationsXML(data, emojiDatabase, "en")
+	return parseAnnotationsXML(data, emojiDatabase, langCode)
 }
 
 // loadAnnotationsFromURL loads emoji annotations from CLDR URL
