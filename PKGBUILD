@@ -12,6 +12,8 @@ build() {
     cd "$startdir"
     export CGO_ENABLED=1
     export GOFLAGS="-buildmode=pie -trimpath -modcacherw"
+    # Generate emoji data from CLDR based on system locales
+    go generate ./...
     # Build with standard Go (no Wails CLI needed)
     # Wails requires -tags desktop,production for proper compilation
     go build -tags desktop,production -o emoji-keyboard .

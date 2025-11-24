@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"sort"
 	"strings"
-
-	"github.com/enescakir/emoji"
 )
 
 // Linux input event key codes for ydotool
@@ -37,6 +34,13 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	
+	// Initialize emoji database from CLDR
+	if err := initEmojiDatabase(); err != nil {
+		// Log error but continue - we might have some data
+		fmt.Printf("Warning: failed to initialize emoji database: %v\n", err)
+	}
+	
 	// Get the currently focused window before creating GUI
 	focusedWindowID, err := getActiveWindow()
 	if err != nil {
@@ -49,12 +53,12 @@ func (a *App) startup(ctx context.Context) {
 
 // GetAllEmojis returns all available emojis sorted by category
 func (a *App) GetAllEmojis() []EmojiData {
-	return getAllEmojis()
+	return getAllEmojisFromDatabase()
 }
 
-// SearchEmojis performs search on emojis by key name
+// SearchEmojis performs search on emojis by keywords across all languages
 func (a *App) SearchEmojis(query string, maxResults int) []EmojiData {
-	return fuzzySearch(query, maxResults)
+	return fuzzySearchInDatabase(query, maxResults)
 }
 
 // TypeEmoji types the selected emoji into the previously focused window
@@ -124,82 +128,6 @@ func getEmojiCategory(emojiStr string) int {
 
 	// Everything else
 	return 10
-}
-
-// getAllEmojis returns all available emojis sorted by category
-func getAllEmojis() []EmojiData {
-	// Use a map to deduplicate emojis (many keys map to same emoji)
-	uniqueEmojis := make(map[string]string)
-	
-	for key, emojiStr := range emoji.Map() {
-		// Keep the shortest key for each unique emoji (more concise and readable)
-		if existingKey, exists := uniqueEmojis[emojiStr]; !exists || len(key) < len(existingKey) {
-			uniqueEmojis[emojiStr] = key
-		}
-	}
-	
-	// Add missing emojis not in the library (add after deduplication to ensure they're included)
-	if _, exists := uniqueEmojis["\U0001F979"]; !exists {
-		uniqueEmojis["\U0001F979"] = ":face_holding_back_tears:" // 🥹 face holding back tears
-	}
-	
-	// Convert map to slice
-	var result []EmojiData
-	for emojiStr, key := range uniqueEmojis {
-		result = append(result, EmojiData{
-			Emoji: emojiStr,
-			Key:   key,
-		})
-	}
-
-	// Sort by category first, then by Unicode code point within category
-	sort.Slice(result, func(i, j int) bool {
-		catI := getEmojiCategory(result[i].Emoji)
-		catJ := getEmojiCategory(result[j].Emoji)
-
-		if catI != catJ {
-			return catI < catJ
-		}
-
-		// Within same category, sort by first Unicode code point
-		runesI := []rune(result[i].Emoji)
-		runesJ := []rune(result[j].Emoji)
-
-		if len(runesI) > 0 && len(runesJ) > 0 {
-			return runesI[0] < runesJ[0]
-		}
-
-		// Fallback to key name
-		return result[i].Key < result[j].Key
-	})
-
-	return result
-}
-
-// fuzzySearch performs simple search on emojis by key name
-func fuzzySearch(query string, maxResults int) []EmojiData {
-	allEmojis := getAllEmojis()
-
-	if query == "" {
-		if len(allEmojis) > maxResults {
-			return allEmojis[:maxResults]
-		}
-		return allEmojis
-	}
-
-	query = strings.ToLower(query)
-	var results []EmojiData
-
-	for _, e := range allEmojis {
-		if strings.Contains(strings.ToLower(e.Key), query) {
-			results = append(results, e)
-			if len(results) >= maxResults {
-				break
-			}
-		}
-	}
-
-	return results
 }
 
 // typeEmoji copies emoji to clipboard and pastes it using kdotool + ydotool
