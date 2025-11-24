@@ -34,43 +34,61 @@ type EmojiInfo struct {
 }
 
 func main() {
-	// Detect system locales
-	locales := detectSystemLocales()
+	// Detect system locales from locale -a command
+	locales := detectSystemLocalesFromCommand()
 	
-	// Always include English
+	// Always include English (loaded from repository)
 	languages := []string{"en"}
 	
-	// Add other detected languages
-	for _, locale := range locales {
-		langCode := strings.Split(locale, "_")[0]
-		if langCode != "en" && langCode != "" && langCode != "C" && langCode != "POSIX" {
-			languages = append(languages, langCode)
-		}
-	}
-	
-	// Deduplicate
+	// Parse locales and extract language codes
+	// For example: kk_KZ -> add "kk"
+	//             sah_RU -> add "sah" and "ru" (region part)
 	seen := make(map[string]bool)
-	var uniqueLangs []string
-	for _, lang := range languages {
-		if !seen[lang] {
-			seen[lang] = true
-			uniqueLangs = append(uniqueLangs, lang)
+	seen["en"] = true
+	
+	for _, locale := range locales {
+		// Parse locale format: language_REGION or language
+		parts := strings.Split(locale, "_")
+		
+		if len(parts) >= 1 {
+			lang := parts[0]
+			if lang != "" && lang != "C" && lang != "POSIX" && !seen[lang] {
+				languages = append(languages, lang)
+				seen[lang] = true
+			}
+		}
+		
+		if len(parts) >= 2 {
+			// Also try to load region as language code (e.g., RU from sah_RU)
+			region := strings.ToLower(parts[1])
+			if region != "" && !seen[region] {
+				languages = append(languages, region)
+				seen[region] = true
+			}
 		}
 	}
 	
 	// Output header to stdout
 	fmt.Printf("// Auto-generated file. Do not edit.\n")
-	fmt.Printf("// Generated for locales: %s\n\n", strings.Join(uniqueLangs, ", "))
+	fmt.Printf("// Generated for locales: %s\n\n", strings.Join(languages, ", "))
 	fmt.Printf("package main\n\n")
 	
-	// Fetch and process emoji data
+	// Load and process emoji data
 	emojiDatabase := make(map[string]*EmojiInfo)
 	
-	for _, lang := range uniqueLangs {
-		if err := loadAnnotations(lang, emojiDatabase); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to load %s: %v\n", lang, err)
+	// Load English from repository (always available)
+	if err := loadAnnotationsFromFile("cldr_data/en.xml", emojiDatabase); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to load English data from repository: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(os.Stderr, "Loaded annotations for: en (from repository)\n")
+	
+	// Try to download additional languages from CLDR
+	for _, lang := range languages[1:] { // Skip "en" as it's already loaded
+		if err := loadAnnotationsFromURL(lang, emojiDatabase); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to load %s from CLDR: %v (continuing with available data)\n", lang, err)
 		} else {
-			fmt.Fprintf(os.Stderr, "Loaded annotations for: %s\n", lang)
+			fmt.Fprintf(os.Stderr, "Loaded annotations for: %s (from CLDR)\n", lang)
 		}
 	}
 	
@@ -116,54 +134,43 @@ func main() {
 	fmt.Printf("}\n")
 }
 
-// detectSystemLocales tries to detect available system locales
-func detectSystemLocales() []string {
+// detectSystemLocalesFromCommand detects locales using locale -a command only
+func detectSystemLocalesFromCommand() []string {
 	var locales []string
 	
-	// Try locale -a command
+	// Use locale -a command to get system locales
 	cmd := exec.Command("locale", "-a")
 	output, err := cmd.Output()
-	if err == nil {
-		lines := strings.Split(string(output), "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line != "" && line != "C" && line != "POSIX" {
-				// Remove encoding (e.g., .utf8, .UTF-8)
-				locale := strings.Split(line, ".")[0]
-				locales = append(locales, locale)
-			}
-		}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to run 'locale -a': %v\n", err)
+		return locales
 	}
 	
-	// Also check environment variables
-	if lang := os.Getenv("LANG"); lang != "" {
-		locale := strings.Split(lang, ".")[0]
-		locales = append(locales, locale)
-	}
-	
-	if language := os.Getenv("LANGUAGE"); language != "" {
-		langs := strings.Split(language, ":")
-		for _, lang := range langs {
-			locale := strings.Split(lang, ".")[0]
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && line != "C" && line != "POSIX" {
+			// Remove encoding (e.g., .utf8, .UTF-8)
+			locale := strings.Split(line, ".")[0]
 			locales = append(locales, locale)
 		}
 	}
 	
-	// Deduplicate
-	seen := make(map[string]bool)
-	var unique []string
-	for _, locale := range locales {
-		if !seen[locale] && locale != "" {
-			seen[locale] = true
-			unique = append(unique, locale)
-		}
-	}
-	
-	return unique
+	return locales
 }
 
-// loadAnnotations loads emoji annotations for a specific language from CLDR
-func loadAnnotations(langCode string, emojiDatabase map[string]*EmojiInfo) error {
+// loadAnnotationsFromFile loads emoji annotations from a local file
+func loadAnnotationsFromFile(filePath string, emojiDatabase map[string]*EmojiInfo) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	
+	return parseAnnotationsXML(data, emojiDatabase, "en")
+}
+
+// loadAnnotationsFromURL loads emoji annotations from CLDR URL
+func loadAnnotationsFromURL(langCode string, emojiDatabase map[string]*EmojiInfo) error {
 	// Validate langCode to prevent injection attacks
 	// Language codes should only contain lowercase letters, underscores, and hyphens
 	for _, ch := range langCode {
@@ -197,6 +204,12 @@ func loadAnnotations(langCode string, emojiDatabase map[string]*EmojiInfo) error
 	if err != nil {
 		return err
 	}
+	
+	return parseAnnotationsXML(data, emojiDatabase, langCode)
+}
+
+// parseAnnotationsXML parses CLDR annotation XML data
+func parseAnnotationsXML(data []byte, emojiDatabase map[string]*EmojiInfo, langCode string) error {
 	
 	var ldml LDML
 	if err := xml.Unmarshal(data, &ldml); err != nil {
