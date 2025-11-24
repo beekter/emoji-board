@@ -41,12 +41,13 @@ func main() {
 	// Detect system locales from locale -a command
 	locales := detectSystemLocalesFromCommand()
 	
-	// Always include English (loaded from repository)
+	// Always include English (loaded from repository JSON file)
 	languages := []string{"en"}
 	
-	// Parse locales and extract language codes
-	// For example: kk_KZ -> add "kk"
-	//             sah_RU -> add "sah" and "ru" (region part)
+	// Parse locales and extract language codes only
+	// For example: kk_KZ -> add "kk" (Kazakh)
+	//             sah_RU -> add "sah" (Yakut), NOT "ru"
+	// We only extract the language part, not the region
 	seen := make(map[string]bool)
 	seen["en"] = true
 	
@@ -61,17 +62,8 @@ func main() {
 				seen[lang] = true
 			}
 		}
-		
-		if len(parts) >= 2 {
-			// Also try to load region as language code (e.g., RU from sah_RU)
-			// This enables language support based on region codes
-			// For example: sah_RU -> tries both 'sah' and 'ru' languages
-			region := strings.ToLower(parts[1])
-			if region != "" && !seen[region] {
-				languages = append(languages, region)
-				seen[region] = true
-			}
-		}
+		// Note: We don't extract region codes as language codes anymore
+		// If user wants Russian, they should have ru_RU locale installed
 	}
 	
 	// Output header to stdout
@@ -87,14 +79,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: failed to load English data from repository: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Fprintf(os.Stderr, "Loaded annotations for: en (from repository)\n")
+	fmt.Fprintf(os.Stderr, "Loaded annotations for: en (from repository JSON)\n")
 	
-	// Try to download additional languages from CLDR
-	for _, lang := range languages[1:] { // Skip "en" as it's already loaded
+	// Try to download additional languages from CLDR (XML format)
+	// Skip the first element which is always "en" (already loaded)
+	for i := 1; i < len(languages); i++ {
+		lang := languages[i]
 		if err := loadAnnotationsFromURL(lang, emojiDatabase); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: failed to load %s from CLDR: %v (continuing with available data)\n", lang, err)
 		} else {
-			fmt.Fprintf(os.Stderr, "Loaded annotations for: %s (from CLDR)\n", lang)
+			fmt.Fprintf(os.Stderr, "Loaded annotations for: %s (from CLDR XML)\n", lang)
 		}
 	}
 	
@@ -165,7 +159,9 @@ func detectSystemLocalesFromCommand() []string {
 	return locales
 }
 
-// loadAnnotationsFromJSON loads emoji annotations from a local JSON file (compact format)
+// loadAnnotationsFromJSON loads emoji annotations from a local JSON file
+// JSON format: {emoji: [name, keyword1, keyword2, ...], ...}
+// The first element is the display name (tts), rest are keywords for search
 func loadAnnotationsFromJSON(filePath string, emojiDatabase map[string]*EmojiInfo, langCode string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
