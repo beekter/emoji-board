@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 )
 
 // EmojiAnnotation represents emoji annotation data from CLDR
@@ -163,11 +164,24 @@ func detectSystemLocales() []string {
 
 // loadAnnotations loads emoji annotations for a specific language from CLDR
 func loadAnnotations(langCode string, emojiDatabase map[string]*EmojiInfo) error {
+	// Validate langCode to prevent injection attacks
+	// Language codes should only contain lowercase letters, underscores, and hyphens
+	for _, ch := range langCode {
+		if !((ch >= 'a' && ch <= 'z') || ch == '_' || ch == '-') {
+			return fmt.Errorf("invalid language code: %s", langCode)
+		}
+	}
+	
 	// URL to CLDR annotation file
 	url := "https://raw.githubusercontent.com/unicode-org/cldr/main/common/annotations/" + langCode + ".xml"
 	
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	
 	// Download the file
-	resp, err := http.Get(url)
+	resp, err := client.Get(url)
 	if err != nil {
 		return err
 	}
@@ -177,8 +191,9 @@ func loadAnnotations(langCode string, emojiDatabase map[string]*EmojiInfo) error
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 	
-	// Parse XML
-	data, err := io.ReadAll(resp.Body)
+	// Parse XML with size limit to prevent resource exhaustion
+	limitedReader := io.LimitReader(resp.Body, 10*1024*1024) // 10MB limit
+	data, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return err
 	}
