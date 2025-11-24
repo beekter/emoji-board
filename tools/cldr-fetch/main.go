@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-// EmojiAnnotation represents emoji annotation data from CLDR
+// EmojiAnnotation represents emoji annotation data from CLDR XML
 type EmojiAnnotation struct {
 	CP       string `xml:"cp,attr"`
 	Type     string `xml:"type,attr"` // "tts" for name, empty for keywords
@@ -32,6 +33,9 @@ type EmojiInfo struct {
 	Name     string
 	Keywords []string
 }
+
+// CompactEmojiData is the JSON format: {emoji: [name, keyword1, keyword2, ...], ...}
+type CompactEmojiData map[string][]string
 
 func main() {
 	// Detect system locales from locale -a command
@@ -78,8 +82,8 @@ func main() {
 	// Load and process emoji data
 	emojiDatabase := make(map[string]*EmojiInfo)
 	
-	// Load English from repository (always available)
-	if err := loadAnnotationsFromFile("cldr_data/en.xml", emojiDatabase, "en"); err != nil {
+	// Load English from repository JSON file (always available)
+	if err := loadAnnotationsFromJSON("cldr_data/en.json", emojiDatabase, "en"); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to load English data from repository: %v\n", err)
 		os.Exit(1)
 	}
@@ -161,17 +165,46 @@ func detectSystemLocalesFromCommand() []string {
 	return locales
 }
 
-// loadAnnotationsFromFile loads emoji annotations from a local file
-func loadAnnotationsFromFile(filePath string, emojiDatabase map[string]*EmojiInfo, langCode string) error {
+// loadAnnotationsFromJSON loads emoji annotations from a local JSON file (compact format)
+func loadAnnotationsFromJSON(filePath string, emojiDatabase map[string]*EmojiInfo, langCode string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 	
-	return parseAnnotationsXML(data, emojiDatabase, langCode)
+	var compactData CompactEmojiData
+	if err := json.Unmarshal(data, &compactData); err != nil {
+		return err
+	}
+	
+	// Convert compact format to EmojiInfo
+	for emoji, values := range compactData {
+		if len(values) == 0 {
+			continue
+		}
+		
+		if _, exists := emojiDatabase[emoji]; !exists {
+			emojiDatabase[emoji] = &EmojiInfo{
+				Emoji:    emoji,
+				Keywords: []string{},
+			}
+		}
+		
+		info := emojiDatabase[emoji]
+		
+		// First element is the name
+		if info.Name == "" || langCode == "en" {
+			info.Name = values[0]
+		}
+		
+		// All elements (including name) are keywords
+		info.Keywords = append(info.Keywords, values...)
+	}
+	
+	return nil
 }
 
-// loadAnnotationsFromURL loads emoji annotations from CLDR URL
+// loadAnnotationsFromURL loads emoji annotations from CLDR URL (XML format)
 func loadAnnotationsFromURL(langCode string, emojiDatabase map[string]*EmojiInfo) error {
 	// Validate langCode to prevent injection attacks
 	// Language codes should only contain lowercase letters, underscores, and hyphens
