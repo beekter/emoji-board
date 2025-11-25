@@ -1,5 +1,8 @@
 .idea
 
+# Auto-generated files
+emoji_data_generated.go
+
 # PKGBUILD artifacts
 pkg/
 *.pkg.tar.*
